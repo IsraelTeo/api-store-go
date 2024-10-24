@@ -2,46 +2,130 @@ package handler
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/IsraelTeo/api-store-go/db"
 	"github.com/IsraelTeo/api-store-go/model"
+	"github.com/gorilla/mux"
 )
 
-const contentTypeJSON = "application/json"
+func GetCustomerById(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		response := newResponse(Error, "Method get not permitted", nil)
+		responseJSON(w, http.StatusMethodNotAllowed, response)
+		return
+	}
 
-func setJSONContentType(w http.ResponseWriter) {
-	w.Header().Set("Content-Type", contentTypeJSON)
+	vars := mux.Vars(r)
+	id := vars["id"]
+	customer := model.Customer{}
+	result := db.GDB.First(&customer, id)
+	if result.Error != nil {
+		response := newResponse(Error, "Customer not found", nil)
+		responseJSON(w, http.StatusNotFound, response)
+		return
+	}
+
+	response := newResponse("success", "Customer found", customer)
+	responseJSON(w, http.StatusOK, response)
 }
 
-func create(w http.ResponseWriter, r *http.Request) {
+func GetAllCustomers(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		response := newResponse(Error, "Method GET not permitted", nil)
+		responseJSON(w, http.StatusMethodNotAllowed, response)
+		return
+	}
+
+	var customers []model.Customer
+
+	result := db.GDB.Find(&customers)
+	if result.Error != nil {
+		response := newResponse(Error, "Failed to fetch customers", nil)
+		fmt.Println("Error fetching customers:", result.Error)
+		responseJSON(w, http.StatusInternalServerError, response)
+		return
+	}
+
+	if len(customers) == 0 {
+		response := newResponse("success", "Customer list is empty", nil)
+		responseJSON(w, http.StatusNoContent, response)
+		return
+	}
+
+	response := newResponse("success", "Customers found", customers)
+	responseJSON(w, http.StatusOK, response)
+}
+
+func CreateCustomer(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		setJSONContentType(w)
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(`{"message_type": "error", "message": "Method not permit"}`))
+		response := newResponse(Error, "Method post not permit", nil)
+		responseJSON(w, http.StatusBadRequest, response)
 		return
 	}
 
 	customer := model.Customer{}
+
 	err := json.NewDecoder(r.Body).Decode(&customer)
 	if err != nil {
-		setJSONContentType(w)
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(`{"message_type": "error", "message": "Invalid request body"}`))
+		response := newResponse(Error, "Internal server error", nil)
+		responseJSON(w, http.StatusInternalServerError, response)
 		return
 	}
 
 	db.GDB.Create(&customer)
-	setJSONContentType(w)
-	w.WriteHeader(http.StatusCreated)
-	w.Write([]byte(`{"message_type": "success", "message": "Customer created successfully"}`))
+	response := newResponse("success", "Customer created successfully", nil)
+	responseJSON(w, http.StatusCreated, response)
 }
 
-func getCustomerById(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		setJSONContentType(w)
-		w.WriteHeader(http.StatusBadGateway)
-		w.Write([]byte(`{"message_type": "error", "message": "Method not permit"}`))
+func UpdateCustomer(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPut {
+		response := newResponse(Error, "Method put not permitted", nil)
+		responseJSON(w, http.StatusMethodNotAllowed, response)
 		return
 	}
+
+	vars := mux.Vars(r)
+	id := vars["id"]
+	customer := model.Customer{}
+
+	result := db.GDB.First(&customer, id)
+	if result.Error != nil { // Cambiado de `result != nil` a `result.Error != nil`
+		response := newResponse(Error, "Customer not found", nil)
+		responseJSON(w, http.StatusNotFound, response)
+		return
+	}
+
+	err := json.NewDecoder(r.Body).Decode(&customer)
+	if err != nil {
+		response := newResponse(Error, "Error decoding request body", nil)
+		responseJSON(w, http.StatusBadRequest, response)
+		return
+	}
+
+	db.GDB.Save(&customer)
+	response := newResponse("success", "Customer updated successfully", customer)
+	responseJSON(w, http.StatusOK, response)
+}
+
+func DeleteCustomer(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodDelete {
+		response := newResponse(Error, "Method delete not permit", nil)
+		responseJSON(w, http.StatusMethodNotAllowed, response)
+		return
+	}
+
+	id := r.URL.Query().Get("id")
+	customer := model.Customer{}
+	result := db.GDB.First(&customer, id)
+	if result.Error != nil {
+		response := newResponse(Error, "Customer not found to delete", nil)
+		responseJSON(w, http.StatusNotFound, response)
+		return
+	}
+
+	db.GDB.Delete(&customer)
+	response := newResponse("success", "Customer deleted successfull", nil)
+	responseJSON(w, http.StatusOK, response)
 }

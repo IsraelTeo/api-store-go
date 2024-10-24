@@ -7,7 +7,7 @@ import (
 	"gorm.io/gorm"
 )
 
-var dsnString = "root:@tcp(localhost:3306)/api_store_go"
+var dsnString = "root:@tcp(localhost:3306)/api_store_go?charset=utf8mb4&parseTime=True&loc=Local"
 var GDB *gorm.DB
 
 func Connection() error {
@@ -20,7 +20,7 @@ func Connection() error {
 }
 
 func MigrateDB() error {
-	err := gdb.AutoMigrate(&model.Product{}, &model.Customer{}, &model.Sale{})
+	err := GDB.AutoMigrate(&model.Product{}, &model.Customer{}, &model.Sale{})
 	if err != nil {
 		return err
 	}

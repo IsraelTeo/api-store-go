@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/IsraelTeo/api-store-go/db"
+	"github.com/IsraelTeo/api-store-go/route"
 	"github.com/gorilla/mux"
 )
 
@@ -26,6 +27,8 @@ func main() {
 	fmt.Println("Database migration successful")
 
 	fmt.Println("Starting server on port 8080...")
+
+	r = route.SetupRoutes()
 
 	err = http.ListenAndServe(":8080", r)
 	if err != nil {
