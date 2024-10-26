@@ -11,4 +11,6 @@ type Customer struct {
 	LastName string `json:"last_name"`
 	DNI      string `json:"dni"`
 	Sales    []Sale `json:"sales" gorm:"foreignKey:CustomerID"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
 }
