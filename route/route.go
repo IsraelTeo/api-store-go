@@ -19,7 +19,7 @@ func SetupRoutes() *mux.Router {
 
 	api.HandleFunc(customersPath, middelware.Log(handler.GetAllCustomers)).Methods("GET")
 	api.HandleFunc(customerIDPath, middelware.Log(handler.GetCustomerById)).Methods("GET")
-	api.HandleFunc(customerBasePath, middelware.Log(middelware.Authentication(handler.CreateCustomer))).Methods("POST")
+	api.HandleFunc(customerBasePath, middelware.Log(handler.CreateCustomer)).Methods("POST")
 	api.HandleFunc(customerIDPath, middelware.Log(handler.UpdateCustomer)).Methods("PUT")
 	api.HandleFunc(customerIDPath, middelware.Log(handler.DeleteCustomer)).Methods("DELETE")
 
