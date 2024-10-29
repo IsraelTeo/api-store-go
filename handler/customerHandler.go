@@ -39,7 +39,6 @@ func GetAllCustomers(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var customers []model.Customer
-
 	result := db.GDB.Find(&customers)
 	if result.Error != nil {
 		response := newResponse(Error, "Failed to fetch customers", nil)
@@ -61,7 +60,7 @@ func GetAllCustomers(w http.ResponseWriter, r *http.Request) {
 func CreateCustomer(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		response := newResponse(Error, "Method post not permit", nil)
-		responseJSON(w, http.StatusBadRequest, response)
+		responseJSON(w, http.StatusMethodNotAllowed, response)
 		return
 	}
 
@@ -91,7 +90,7 @@ func UpdateCustomer(w http.ResponseWriter, r *http.Request) {
 	customer := model.Customer{}
 
 	result := db.GDB.First(&customer, id)
-	if result.Error != nil { // Cambiado de `result != nil` a `result.Error != nil`
+	if result.Error != nil {
 		response := newResponse(Error, "Customer not found", nil)
 		responseJSON(w, http.StatusNotFound, response)
 		return
@@ -116,7 +115,8 @@ func DeleteCustomer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id := r.URL.Query().Get("id")
+	vars := mux.Vars(r)
+	id := vars["id"]
 	customer := model.Customer{}
 	result := db.GDB.First(&customer, id)
 	if result.Error != nil {

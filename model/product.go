@@ -2,6 +2,8 @@ package model
 
 import "gorm.io/gorm"
 
+type Stock []Product
+
 type Product struct {
 	gorm.Model
 

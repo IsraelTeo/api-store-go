@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"encoding/json"
 	"net/http"
 
 	"github.com/IsraelTeo/api-store-go/db"
@@ -29,9 +30,8 @@ func GetProductById(w http.ResponseWriter, r *http.Request) {
 	responseJSON(w, http.StatusOK, response)
 }
 
-
-func GetAllProducts(w http.ResponseWriter, r *http.Request){
-	if r.Method != http.MethodGet{
+func GetAllProducts(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
 		response := newResponse(Error, "Method get not permitted", nil)
 		responseJSON(w, http.StatusMethodNotAllowed, response)
 		return
@@ -39,7 +39,7 @@ func GetAllProducts(w http.ResponseWriter, r *http.Request){
 
 	var sales []model.Sale
 	result := db.GDB.Find(&sales)
-	if result.Error != nil{
+	if result.Error != nil {
 		response := newResponse(Error, "Sales not found", nil)
 		responseJSON(w, http.StatusNotFound, response)
 		return
@@ -49,12 +49,73 @@ func GetAllProducts(w http.ResponseWriter, r *http.Request){
 	responseJSON(w, http.StatusOK, response)
 }
 
+func CreateProduct(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		response := newResponse(Error, "Method post not permitted", nil)
+		responseJSON(w, http.StatusMethodNotAllowed, response)
+		return
+	}
 
+	var product model.Product
+	result := db.GDB.Save(&product)
+	if result.Error != nil {
+		response := newResponse(Error, "Product not found", nil)
+		responseJSON(w, http.StatusBadRequest, response)
+		return
+	}
 
+	response := newResponse("success", "Product created successfusly", product)
+	responseJSON(w, http.StatusOK, response)
+}
 
+func UpdateProduct(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPut {
+		response := newResponse(Error, "Method put not permitted", nil)
+		responseJSON(w, http.StatusMethodNotAllowed, response)
+		return
+	}
 
+	vars := mux.Vars(r)
+	id := vars["id"]
+	product := model.Product{}
 
+	result := db.GDB.First(&product, id)
+	if result.Error != nil {
+		response := newResponse(Error, "Product not found", nil)
+		responseJSON(w, http.StatusNotFound, response)
+		return
+	}
 
+	err := json.NewDecoder(r.Body).Decode(&product)
+	if err != nil {
+		response := newResponse(Error, "Error decoding request body", nil)
+		responseJSON(w, http.StatusBadRequest, response)
+		return
+	}
 
+	db.GDB.Save(&product)
+	response := newResponse("success", "Product updated successfully", product)
+	responseJSON(w, http.StatusOK, response)
+}
 
+func DeleteProduct(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodDelete {
+		response := newResponse(Error, "Method delete not permit", nil)
+		responseJSON(w, http.StatusMethodNotAllowed, response)
+		return
+	}
+
+	vars := mux.Vars(r)
+	id := vars["id"]
+	product := model.Product{}
+	result := db.GDB.First(&product, id)
+	if result.Error != nil {
+		response := newResponse(Error, "Product not found to delete", nil)
+		responseJSON(w, http.StatusNotFound, response)
+		return
+	}
+
+	db.GDB.Delete(&product)
+	response := newResponse("success", "Product deleted successfull", nil)
+	responseJSON(w, http.StatusOK, response)
 }
