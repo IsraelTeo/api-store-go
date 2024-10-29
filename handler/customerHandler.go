@@ -2,7 +2,6 @@ package handler
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/IsraelTeo/api-store-go/db"
@@ -42,7 +41,6 @@ func GetAllCustomers(w http.ResponseWriter, r *http.Request) {
 	result := db.GDB.Find(&customers)
 	if result.Error != nil {
 		response := newResponse(Error, "Failed to fetch customers", nil)
-		fmt.Println("Error fetching customers:", result.Error)
 		responseJSON(w, http.StatusInternalServerError, response)
 		return
 	}

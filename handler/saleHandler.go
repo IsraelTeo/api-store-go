@@ -9,7 +9,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func GetProductById(w http.ResponseWriter, r *http.Request) {
+func GetSaleById(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		response := newResponse(Error, "Method get not permitted", nil)
 		responseJSON(w, http.StatusMethodNotAllowed, response)
@@ -19,62 +19,61 @@ func GetProductById(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
 	sale := model.Sale{}
-	result := db.GDB.First(id, &sale)
+	result := db.GDB.First(&sale, id)
 	if result.Error != nil {
 		response := newResponse(Error, "Sale not found", nil)
 		responseJSON(w, http.StatusNotFound, response)
 		return
 	}
 
-	response := newResponse("success", "Product found", sale)
+	response := newResponse("success", "Sale found", sale)
 	responseJSON(w, http.StatusOK, response)
 }
 
-func GetAllProducts(w http.ResponseWriter, r *http.Request) {
+func GetAllSales(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		response := newResponse(Error, "Method get not permitted", nil)
 		responseJSON(w, http.StatusMethodNotAllowed, response)
-		return
 	}
 
-	var products model.Products
-	result := db.GDB.Find(&products)
+	var sales model.Sales
+	result := db.GDB.Find(&sales)
 	if result.Error != nil {
-		response := newResponse(Error, "Failed to fetch products", nil)
+		response := newResponse(Error, "Failed to fetch customers", nil)
 		responseJSON(w, http.StatusInternalServerError, response)
 		return
 	}
 
-	if len(products) == 0 {
-		response := newResponse("success", "Products list is empty", nil)
+	if len(sales) == 0 {
+		response := newResponse("success", "Sales list is empty", nil)
 		responseJSON(w, http.StatusNoContent, response)
 		return
 	}
 
-	response := newResponse("success", "Products found", products)
+	response := newResponse("success", "Sales found", sales)
 	responseJSON(w, http.StatusOK, response)
 }
 
-func CreateProduct(w http.ResponseWriter, r *http.Request) {
+func CreateSale(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		response := newResponse(Error, "Method post not permitted", nil)
 		responseJSON(w, http.StatusMethodNotAllowed, response)
 		return
 	}
 
-	var product model.Product
-	result := db.GDB.Save(&product)
+	var sale model.Sale
+	result := db.GDB.Save(&sale)
 	if result.Error != nil {
-		response := newResponse(Error, "Product not found", nil)
+		response := newResponse(Error, "Sale not found", nil)
 		responseJSON(w, http.StatusBadRequest, response)
 		return
 	}
 
-	response := newResponse("success", "Product created successfusly", product)
+	response := newResponse("success", "Sale created successfusly", sale)
 	responseJSON(w, http.StatusOK, response)
 }
 
-func UpdateProduct(w http.ResponseWriter, r *http.Request) {
+func UpdateSale(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPut {
 		response := newResponse(Error, "Method put not permitted", nil)
 		responseJSON(w, http.StatusMethodNotAllowed, response)
@@ -83,28 +82,27 @@ func UpdateProduct(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
 	id := vars["id"]
-	product := model.Product{}
-
-	result := db.GDB.First(&product, id)
+	sale := model.Sale{}
+	result := db.GDB.First(&sale, id)
 	if result.Error != nil {
-		response := newResponse(Error, "Product not found", nil)
+		response := newResponse(Error, "Sale not found", nil)
 		responseJSON(w, http.StatusNotFound, response)
 		return
 	}
 
-	err := json.NewDecoder(r.Body).Decode(&product)
+	err := json.NewDecoder(r.Body).Decode(&sale)
 	if err != nil {
 		response := newResponse(Error, "Error decoding request body", nil)
 		responseJSON(w, http.StatusBadRequest, response)
 		return
 	}
 
-	db.GDB.Save(&product)
-	response := newResponse("success", "Product updated successfully", product)
+	db.GDB.Save(&sale)
+	response := newResponse("success", "Sale updated successfully", sale)
 	responseJSON(w, http.StatusOK, response)
 }
 
-func DeleteProduct(w http.ResponseWriter, r *http.Request) {
+func DeleteSale(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodDelete {
 		response := newResponse(Error, "Method delete not permit", nil)
 		responseJSON(w, http.StatusMethodNotAllowed, response)
@@ -113,15 +111,15 @@ func DeleteProduct(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
 	id := vars["id"]
-	product := model.Product{}
-	result := db.GDB.First(&product, id)
+	sale := model.Sale{}
+	result := db.GDB.First(&sale, id)
 	if result.Error != nil {
-		response := newResponse(Error, "Product not found to delete", nil)
+		response := newResponse(Error, "Sale not found to delete", nil)
 		responseJSON(w, http.StatusNotFound, response)
 		return
 	}
 
-	db.GDB.Delete(&product)
-	response := newResponse("success", "Product deleted successfull", nil)
+	db.GDB.Delete(&sale)
+	response := newResponse("success", "Sale deleted successfull", nil)
 	responseJSON(w, http.StatusOK, response)
 }
