@@ -21,7 +21,7 @@ func GetSaleById(w http.ResponseWriter, r *http.Request) {
 	sale := model.Sale{}
 	result := db.GDB.First(&sale, id)
 	if result.Error != nil {
-		response := newResponse(Error, "Sale not found", nil)
+		response := newResponse(Error, "Sale are not found", nil)
 		responseJSON(w, http.StatusNotFound, response)
 		return
 	}
@@ -45,7 +45,7 @@ func GetAllSales(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(sales) == 0 {
-		response := newResponse("success", "Sales list is empty", nil)
+		response := newResponse("success", "Sales list is empty", sales)
 		responseJSON(w, http.StatusNoContent, response)
 		return
 	}
@@ -62,15 +62,15 @@ func CreateSale(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var sale model.Sale
-	result := db.GDB.Save(&sale)
+	result := db.GDB.Create(&sale)
 	if result.Error != nil {
-		response := newResponse(Error, "Sale not found", nil)
+		response := newResponse(Error, "Bad request", nil)
 		responseJSON(w, http.StatusBadRequest, response)
 		return
 	}
 
 	response := newResponse("success", "Sale created successfusly", sale)
-	responseJSON(w, http.StatusOK, response)
+	responseJSON(w, http.StatusCreated, response)
 }
 
 func UpdateSale(w http.ResponseWriter, r *http.Request) {

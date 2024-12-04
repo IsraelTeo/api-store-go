@@ -63,7 +63,7 @@ func CreateProduct(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var product model.Product
-	result := db.GDB.Save(&product)
+	result := db.GDB.Create(&product)
 	if result.Error != nil {
 		response := newResponse(Error, "Product not found", nil)
 		responseJSON(w, http.StatusBadRequest, response)
