@@ -9,11 +9,11 @@ import (
 )
 
 type CustomerService interface {
-	GetByID(id uint) (*model.Customer, error)
+	GetByID(ID uint) (*model.Customer, error)
 	GetAll() ([]model.Customer, error)
 	Create(customer *model.Customer) error
-	Update(id uint, customer *model.Customer) (*model.Customer, error)
-	Delete(id uint) error
+	Update(ID uint, customer *model.Customer) (*model.Customer, error)
+	Delete(ID uint) error
 }
 
 type customerService struct {
@@ -24,10 +24,10 @@ func NewCustomerService(repo repository.CustomerRepository) CustomerService {
 	return &customerService{repo: repo}
 }
 
-func (s *customerService) GetByID(id uint) (*model.Customer, error) {
-	customer, err := s.repo.GetByID(id)
+func (s *customerService) GetByID(ID uint) (*model.Customer, error) {
+	customer, err := s.repo.GetByID(ID)
 	if err != nil {
-		log.Printf("Error fetching customer with ID %d: %v", id, err)
+		log.Printf("Error fetching customer with ID %d: %v", ID, err)
 		return nil, err
 	}
 
@@ -58,10 +58,10 @@ func (s *customerService) Create(customer *model.Customer) error {
 	return nil
 }
 
-func (s *customerService) Update(id uint, customer *model.Customer) (*model.Customer, error) {
-	customerFound, err := s.repo.GetByID(id)
+func (s *customerService) Update(ID uint, customer *model.Customer) (*model.Customer, error) {
+	customerFound, err := s.repo.GetByID(ID)
 	if err != nil {
-		log.Printf("Error fetching customer with ID %d for update: %v", id, err)
+		log.Printf("Error fetching customer with ID %d for update: %v", ID, err)
 		return nil, err
 	}
 
@@ -71,7 +71,7 @@ func (s *customerService) Update(id uint, customer *model.Customer) (*model.Cust
 
 	updatedCustomer, err := s.repo.Update(customerFound)
 	if err != nil {
-		log.Printf("Error updating customer with ID %d: %v", id, err)
+		log.Printf("Error updating customer with ID %d: %v", ID, err)
 		return nil, err
 	}
 

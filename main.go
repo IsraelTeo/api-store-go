@@ -18,6 +18,25 @@ import (
 
 func main() {
 
+	// Carga de variables de entorno
+	if err := godotenv.Load(); err != nil {
+		log.Fatal("Error loanding .env main")
+	}
+
+	//Conexión a la base de datos
+	if err := db.Connection(); err != nil {
+		log.Fatalf("Error trying to connect with database: %v", err)
+	}
+	fmt.Println("\nDatabase connection ok")
+
+	//Migración de entidades
+	if err := db.MigrateDB(); err != nil {
+		log.Fatalf("Error migrating database: %v", err)
+	}
+	fmt.Println("Database migration successful")
+
+	fmt.Println("Starting server on port 8080...")
+
 	//Se crea repositorios, servicios y handlers.
 	userRepository := repository.NewUserRepository(db.GDB)
 	userService := service.NewUserService(userRepository)
@@ -46,11 +65,6 @@ func main() {
 	//Inicialización del Validador
 	validate.InitValidator()
 
-	// Carga de variables de entorno
-	if err := godotenv.Load(); err != nil {
-		log.Fatal("Error loanding .env main")
-	}
-
 	//Este middleware agrega un logger personalizado para registrar el método HTTP, URI, estado y tiempo de latencia de cada solicitud.
 	e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
 		Format: "method=${method}, uri=${uri}, status=${status}, time=${latency_human}\n",
@@ -62,22 +76,8 @@ func main() {
 	//Registra cada solicitud HTTP de manera estándar.
 	e.Use(middleware.Logger())
 
-	err := db.Connection()
-	if err != nil {
-		log.Fatalf("Error trying to connect with database: %v", err)
-	}
-	fmt.Println("\nDatabase connection ok")
-
-	err = db.MigrateDB()
-	if err != nil {
-		log.Fatalf("Error migrating database: %v", err)
-	}
-	fmt.Println("Database migration successful")
-
-	fmt.Println("Starting server on port 8080...")
-
-	err = e.Start(":8080")
-	if err != nil {
+	//Se inicia el servidor en el puerto 8080
+	if err := e.Start(":8080"); err != nil {
 		log.Fatalf("Error starting server: %v", err)
 	}
 

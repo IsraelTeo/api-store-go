@@ -6,6 +6,7 @@ import (
 	"github.com/IsraelTeo/api-store-go/model"
 	"github.com/IsraelTeo/api-store-go/repository"
 	"github.com/IsraelTeo/api-store-go/validate"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type UserService interface {
@@ -61,6 +62,13 @@ func (s *userService) GetByEmail(email string) (*model.User, error) {
 }
 
 func (s *userService) RegisterUser(user *model.User) error {
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+
+	user.Password = string(hashedPassword)
 	if err := s.repo.Create(user); err != nil {
 		log.Printf("Error creating user: %+v, error: %v", user, err)
 		return err
@@ -70,7 +78,7 @@ func (s *userService) RegisterUser(user *model.User) error {
 }
 
 func (s *userService) Update(ID uint, user *model.User) (*model.User, error) {
-	userFound, err := s.repo.GetByID(user.ID)
+	userFound, err := s.repo.GetByID(ID)
 	if err != nil {
 		log.Printf("Error fetching user with ID %d for update: %v", ID, err)
 
