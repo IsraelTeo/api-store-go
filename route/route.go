@@ -7,42 +7,44 @@ import (
 )
 
 const (
-	idPath  = "/:id"
-	allPath = "/all"
+	idPath   = "/:id"
+	allPath  = "/all"
+	voidPath = ""
 )
 
 func SetupRoutes(e *echo.Echo,
-	authentication authentication.LoginService,
+	authService authentication.LoginService,
 	userHandler *handler.UserHandler,
 	customerHandler *handler.CustomerHandler,
 	saleHandler *handler.SaleHandler,
 	productHandler *handler.ProductHandler) {
 
-	api := e.Group("/api/v1") // Grupo principal para api/v1
+	// Grupo principal para api/v1
+	api := e.Group("/api/v1")
 
 	// Rutas de autenticación
 	auth := api.Group("/auth")
-	auth.POST("/login", authentication.Login)
+	auth.POST("/login", authService.Login)
 
 	// Rutas de usuarios
 	users := api.Group("/users")
-	users.POST("", userHandler.RegisterUser)
-	users.GET(idPath, userHandler.GetUserByID)
-	users.GET(allPath, userHandler.GetAllUsers)
-	users.PUT(idPath, userHandler.UpdateUser)
-	users.DELETE(idPath, userHandler.DeleteUser)
+	users.POST(voidPath, userHandler.RegisterUser)
+	users.GET(idPath, authentication.ValidateJWT(userHandler.GetUserByID))
+	users.GET(allPath, authentication.ValidateJWT(userHandler.GetAllUsers))
+	users.PUT(idPath, authentication.ValidateJWT(userHandler.UpdateUser))
+	users.DELETE(idPath, authentication.ValidateJWT(userHandler.DeleteUser))
 
 	// Rutas de clientes
 	customers := api.Group("/customers")
-	customers.POST("", customerHandler.CreateCustomer)
-	customers.GET(idPath, customerHandler.GetCustomerByID)
-	customers.GET(allPath, customerHandler.GetAllCustomers)
-	customers.PUT(idPath, customerHandler.UpdateCustomer)
-	customers.DELETE(idPath, customerHandler.DeleteCustomer)
+	customers.POST(voidPath, authentication.ValidateJWTAdmin(customerHandler.CreateCustomer))
+	customers.GET(idPath, authentication.ValidateJWTAdmin(customerHandler.GetCustomerByID))
+	customers.GET(allPath, authentication.ValidateJWTAdmin(customerHandler.GetAllCustomers))
+	customers.PUT(idPath, authentication.ValidateJWTAdmin(customerHandler.UpdateCustomer))
+	customers.DELETE(idPath, authentication.ValidateJWTAdmin(customerHandler.DeleteCustomer))
 
 	// Rutas de ventas
 	sales := api.Group("/sales")
-	sales.POST("", saleHandler.CreateSale)
+	sales.POST(voidPath, saleHandler.CreateSale)
 	sales.GET(idPath, saleHandler.GetSaleByID)
 	sales.GET(allPath, saleHandler.GetAllSales)
 	sales.PUT(idPath, saleHandler.UpdateSale)
@@ -50,9 +52,9 @@ func SetupRoutes(e *echo.Echo,
 
 	// Rutas de productos
 	products := api.Group("/products")
-	products.POST("", productHandler.CreateProduct)
-	products.GET(idPath, productHandler.GetProductByID)
-	products.GET(allPath, productHandler.GetAllProducts)
+	products.POST(voidPath, productHandler.CreateProduct)
+	products.GET(idPath, authentication.ValidateJWT(productHandler.GetProductByID))
+	products.GET(allPath, authentication.ValidateJWT(productHandler.GetAllProducts))
 	products.PUT(idPath, productHandler.UpdateProduct)
 	products.DELETE(idPath, productHandler.DeleteProduct)
 }
