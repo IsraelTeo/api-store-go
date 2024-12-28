@@ -1,125 +1,113 @@
 package handler
 
 import (
-	"encoding/json"
 	"net/http"
 
-	"github.com/IsraelTeo/api-store-go/db"
 	"github.com/IsraelTeo/api-store-go/model"
-	"github.com/gorilla/mux"
+	"github.com/IsraelTeo/api-store-go/payload"
+	"github.com/IsraelTeo/api-store-go/service"
+	"github.com/IsraelTeo/api-store-go/validate"
+	"github.com/labstack/echo/v4"
 )
 
-func GetSaleById(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		response := newResponse(Error, "Method get not permitted", nil)
-		responseJSON(w, http.StatusMethodNotAllowed, response)
-		return
-	}
-
-	vars := mux.Vars(r)
-	id := vars["id"]
-	sale := model.Sale{}
-	result := db.GDB.First(&sale, id)
-	if result.Error != nil {
-		response := newResponse(Error, "Sale are not found", nil)
-		responseJSON(w, http.StatusNotFound, response)
-		return
-	}
-
-	response := newResponse("success", "Sale found", sale)
-	responseJSON(w, http.StatusOK, response)
+type SaleHandler struct {
+	service service.SaleService
 }
 
-func GetAllSales(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		response := newResponse(Error, "Method get not permitted", nil)
-		responseJSON(w, http.StatusMethodNotAllowed, response)
+// NewSaleHandler constructor para SaleHandler
+func NewSaleHandler(service service.SaleService) *SaleHandler {
+	return &SaleHandler{service: service}
+}
+
+// GetSaleById obtiene una venta por su ID
+func (h *SaleHandler) GetSaleByID(c echo.Context) error {
+	ID, err := validate.ValidateAndParseID(c)
+	if err != nil {
+		response := payload.NewResponse(payload.MessageTypeError, "Invalid ID format.", nil)
+		return c.JSON(http.StatusBadRequest, response)
 	}
 
-	var sales model.Sales
-	result := db.GDB.Find(&sales)
-	if result.Error != nil {
-		response := newResponse(Error, "Failed to fetch customers", nil)
-		responseJSON(w, http.StatusInternalServerError, response)
-		return
+	sale, err := h.service.GetByID(uint(ID))
+	if err != nil {
+		response := payload.NewResponse(payload.MessageTypeError, "Sale not found", nil)
+		return c.JSON(http.StatusNotFound, response)
+	}
+
+	response := payload.NewResponse(payload.MessageTypeSuccess, "Sale found successfully", sale)
+	return c.JSON(http.StatusOK, response)
+}
+
+// GetAllSales obtiene todas las ventas
+func (h *SaleHandler) GetAllSales(c echo.Context) error {
+	sales, err := h.service.GetAll()
+	if err != nil {
+		response := payload.NewResponse(payload.MessageTypeError, "Failed to fetch sales", nil)
+		return c.JSON(http.StatusInternalServerError, response)
 	}
 
 	if len(sales) == 0 {
-		response := newResponse("success", "Sales list is empty", sales)
-		responseJSON(w, http.StatusNoContent, response)
-		return
+		response := payload.NewResponse(payload.MessageTypeSuccess, "Sales list is empty", sales)
+		return c.JSON(http.StatusNoContent, response)
 	}
 
-	response := newResponse("success", "Sales found", sales)
-	responseJSON(w, http.StatusOK, response)
+	response := payload.NewResponse(payload.MessageTypeSuccess, "Sales found", sales)
+	return c.JSON(http.StatusOK, response)
 }
 
-func CreateSale(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		response := newResponse(Error, "Method post not permitted", nil)
-		responseJSON(w, http.StatusMethodNotAllowed, response)
-		return
-	}
-
-	var sale model.Sale
-	result := db.GDB.Create(&sale)
-	if result.Error != nil {
-		response := newResponse(Error, "Bad request", nil)
-		responseJSON(w, http.StatusBadRequest, response)
-		return
-	}
-
-	response := newResponse("success", "Sale created successfusly", sale)
-	responseJSON(w, http.StatusCreated, response)
-}
-
-func UpdateSale(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPut {
-		response := newResponse(Error, "Method put not permitted", nil)
-		responseJSON(w, http.StatusMethodNotAllowed, response)
-		return
-	}
-
-	vars := mux.Vars(r)
-	id := vars["id"]
+// CreateSale registra una nueva venta
+func (h *SaleHandler) CreateSale(c echo.Context) error {
 	sale := model.Sale{}
-	result := db.GDB.First(&sale, id)
-	if result.Error != nil {
-		response := newResponse(Error, "Sale not found", nil)
-		responseJSON(w, http.StatusNotFound, response)
-		return
+	if err := c.Bind(&sale); err != nil {
+		response := payload.NewResponse(payload.MessageTypeError, "Bad request", nil)
+		return c.JSON(http.StatusBadRequest, response)
 	}
 
-	err := json.NewDecoder(r.Body).Decode(&sale)
+	if err := h.service.Create(&sale); err != nil {
+		response := payload.NewResponse(payload.MessageTypeError, "Failed to save sale", nil)
+		return c.JSON(http.StatusInternalServerError, response)
+	}
+
+	response := payload.NewResponse(payload.MessageTypeSuccess, "Sale created successfully", sale)
+	return c.JSON(http.StatusCreated, response)
+}
+
+// UpdateSale actualiza una venta existente
+func (h *SaleHandler) UpdateSale(c echo.Context) error {
+	ID, err := validate.ValidateAndParseID(c)
 	if err != nil {
-		response := newResponse(Error, "Error decoding request body", nil)
-		responseJSON(w, http.StatusBadRequest, response)
-		return
+		response := payload.NewResponse(payload.MessageTypeError, "Invalid ID format", nil)
+		return c.JSON(http.StatusBadRequest, response)
 	}
 
-	db.GDB.Save(&sale)
-	response := newResponse("success", "Sale updated successfully", sale)
-	responseJSON(w, http.StatusOK, response)
+	sale := model.Sale{}
+	if err := c.Bind(&sale); err != nil {
+		response := payload.NewResponse(payload.MessageTypeError, "Bad request", nil)
+		return c.JSON(http.StatusBadRequest, response)
+	}
+
+	updatedSale, err := h.service.Update(uint(ID), &sale)
+	if err != nil {
+		response := payload.NewResponse(payload.MessageTypeError, "Failed to update sale", nil)
+		return c.JSON(http.StatusInternalServerError, response)
+	}
+
+	response := payload.NewResponse(payload.MessageTypeSuccess, "Sale updated successfully", updatedSale)
+	return c.JSON(http.StatusOK, response)
 }
 
-func DeleteSale(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodDelete {
-		response := newResponse(Error, "Method delete not permit", nil)
-		responseJSON(w, http.StatusMethodNotAllowed, response)
-		return
+// DeleteSale elimina una venta por su ID
+func (h *SaleHandler) DeleteSale(c echo.Context) error {
+	ID, err := validate.ValidateAndParseID(c)
+	if err != nil {
+		response := payload.NewResponse(payload.MessageTypeError, "Invalid ID format", nil)
+		return c.JSON(http.StatusBadRequest, response)
 	}
 
-	vars := mux.Vars(r)
-	id := vars["id"]
-	sale := model.Sale{}
-	result := db.GDB.First(&sale, id)
-	if result.Error != nil {
-		response := newResponse(Error, "Sale not found to delete", nil)
-		responseJSON(w, http.StatusNotFound, response)
-		return
+	if err := h.service.Delete(uint(ID)); err != nil {
+		response := payload.NewResponse(payload.MessageTypeError, "Failed to delete sale", nil)
+		return c.JSON(http.StatusInternalServerError, response)
 	}
 
-	db.GDB.Delete(&sale)
-	response := newResponse("success", "Sale deleted successfull", nil)
-	responseJSON(w, http.StatusOK, response)
+	response := payload.NewResponse(payload.MessageTypeSuccess, "Sale deleted successfully", nil)
+	return c.JSON(http.StatusOK, response)
 }

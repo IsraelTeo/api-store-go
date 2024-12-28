@@ -4,15 +4,11 @@ import (
 	"gorm.io/gorm"
 )
 
-type Sales []Sale
-
 type Customer struct {
 	gorm.Model
 
-	Name     string `json:"name"`
-	LastName string `json:"last_name"`
-	DNI      string `json:"dni"`
-	Sales    Sales  `json:"sales" gorm:"foreignKey:CustomerID"`
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	Name     string `json:"name" validate:"required,min=2,max=50"`
+	LastName string `json:"last_name" validate:"required,min=2,max=70"`
+	DNI      string `json:"dni" gorm:"unique" validate:"required,max=15,numeric"`
+	Sales    []Sale `gorm:"foreignKey:CustomerID" json:"sales"`
 }
