@@ -3,18 +3,20 @@ package service
 import (
 	"log"
 
+	"github.com/IsraelTeo/api-store-go/dto"
 	"github.com/IsraelTeo/api-store-go/model"
 	"github.com/IsraelTeo/api-store-go/repository"
+	"github.com/IsraelTeo/api-store-go/util"
 	"github.com/IsraelTeo/api-store-go/validate"
 	"golang.org/x/crypto/bcrypt"
 )
 
 type UserService interface {
-	GetBydID(ID uint) (*model.User, error)
-	GetByEmail(email string) (*model.User, error)
-	GetAll() ([]model.User, error)
+	GetBydID(ID uint) (*dto.UserResponse, error)
+	GetByEmail(email string) (*dto.UserResponse, error)
+	GetAll() ([]dto.UserResponse, error)
 	RegisterUser(user *model.User) error
-	Update(ID uint, user *model.User) (*model.User, error)
+	Update(ID uint, user *model.User) (*dto.UserResponse, error)
 	Delete(ID uint) error
 }
 
@@ -26,17 +28,19 @@ func NewUserService(repo repository.UserRepository) UserService {
 	return &userService{repo: repo}
 }
 
-func (s *userService) GetBydID(ID uint) (*model.User, error) {
+func (s *userService) GetBydID(ID uint) (*dto.UserResponse, error) {
 	user, err := s.repo.GetByID(ID)
 	if err != nil {
 		log.Printf("Error fetching user with ID %d: %v", ID, err)
 		return nil, err
 	}
 
-	return user, nil
+	userDto := util.ToUserDTO(user)
+
+	return userDto, nil
 }
 
-func (s *userService) GetAll() ([]model.User, error) {
+func (s *userService) GetAll() ([]dto.UserResponse, error) {
 	users, err := s.repo.GetAll()
 	if err != nil {
 		log.Printf("Error fetching users: %v", err)
@@ -45,24 +49,26 @@ func (s *userService) GetAll() ([]model.User, error) {
 
 	if validate.VerifyListEmpty(users) {
 		log.Println("Customers list is empty")
-		return users, nil
+		return []dto.UserResponse{}, nil
 	}
 
-	return users, nil
+	usersDto := util.ToListUserDTO(users)
+	return usersDto, nil
 }
 
-func (s *userService) GetByEmail(email string) (*model.User, error) {
+func (s *userService) GetByEmail(email string) (*dto.UserResponse, error) {
 	user, err := s.repo.GetByEmail(email)
 	if err != nil {
 		log.Printf("Error fetching user with Email %s: %v", email, err)
 		return nil, err
 	}
 
-	return user, nil
+	userDto := util.ToUserDTO(user)
+
+	return userDto, nil
 }
 
 func (s *userService) RegisterUser(user *model.User) error {
-
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return err
@@ -77,24 +83,37 @@ func (s *userService) RegisterUser(user *model.User) error {
 	return nil
 }
 
-func (s *userService) Update(ID uint, user *model.User) (*model.User, error) {
+func (s *userService) Update(ID uint, user *model.User) (*dto.UserResponse, error) {
 	userFound, err := s.repo.GetByID(ID)
 	if err != nil {
 		log.Printf("Error fetching user with ID %d for update: %v", ID, err)
-
 		return nil, err
 	}
 
-	userFound.Email = user.Email
-	userFound.Password = user.Password
+	if user.Password != "" {
+		log.Printf("Password update detected for user with ID %d. Hashing new password.", ID)
+		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
+		if err != nil {
+			log.Printf("Error hashing password for user with ID %d: %v", ID, err)
+			return nil, err
+		}
+		userFound.Password = string(hashedPassword)
+	}
 
-	err = s.repo.Update(userFound)
+	if user.Email != "" {
+		log.Printf("Email update detected for user with ID %d. Updating email to: %s", ID, user.Email)
+		userFound.Email = user.Email
+	}
+
+	userUpdated, err := s.repo.Update(userFound)
 	if err != nil {
 		log.Printf("Error updating user with ID %d: %v", ID, err)
 		return nil, err
 	}
 
-	return userFound, nil
+	userDto := util.ToUserDTO(userUpdated)
+
+	return userDto, nil
 }
 
 func (s *userService) Delete(ID uint) error {

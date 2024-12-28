@@ -86,3 +86,9 @@ func (s *productService) Delete(ID uint) error {
 
 	return nil
 }
+
+//Obtener todos los productos cuya cantidad_disponible sea menor a 5 -> ruta: /falta_stock
+
+// Obtener la lista de productos de una determinada venta -> ruta:/{codigo de venta}
+
+//requerimiento: actualizar el stock de un producto (descontar) realizar una venta, y tampoco controlar si cuenta con la cantidad disponible para vender;

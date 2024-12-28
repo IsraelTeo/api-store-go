@@ -115,3 +115,7 @@ func calculateAmount(products []model.Product) (float64, error) {
 
 	return totalAmount, nil
 }
+
+//Obtener la sumatoria del monto y también cantidad total de ventas de un determinado dia -> ruta: /{fecha_venta}
+
+//Obtener el codigo_venta, el total, la cantidad de productos, el nombre del cliente y el vapellido del cliente de la venta con el monto más alto de todas. ruta -> /mayor_venta

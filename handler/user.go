@@ -63,15 +63,15 @@ func (h *UserHandler) RegisterUser(c echo.Context) error {
 }
 
 func (h *UserHandler) UpdateUser(c echo.Context) error {
-	user := model.User{}
-	if err := c.Bind(&user); err != nil {
-		response := payload.NewResponse(payload.MessageTypeError, "Bad request", nil)
-		return c.JSON(http.StatusBadRequest, response)
-	}
-
 	ID, err := validate.ValidateAndParseID(c)
 	if err != nil {
 		response := payload.NewResponse(payload.MessageTypeError, "Invalid ID format", nil)
+		return c.JSON(http.StatusBadRequest, response)
+	}
+
+	user := model.User{}
+	if err := c.Bind(&user); err != nil {
+		response := payload.NewResponse(payload.MessageTypeError, "Bad request", nil)
 		return c.JSON(http.StatusBadRequest, response)
 	}
 

@@ -44,17 +44,17 @@ func SetupRoutes(e *echo.Echo,
 
 	// Rutas de ventas
 	sales := api.Group("/sales")
-	sales.POST(voidPath, saleHandler.CreateSale)
-	sales.GET(idPath, saleHandler.GetSaleByID)
-	sales.GET(allPath, saleHandler.GetAllSales)
-	sales.PUT(idPath, saleHandler.UpdateSale)
-	sales.DELETE(idPath, saleHandler.DeleteSale)
+	sales.POST(voidPath, authentication.ValidateJWTAdmin(saleHandler.CreateSale))
+	sales.GET(idPath, authentication.ValidateJWTAdmin(saleHandler.GetSaleByID))
+	sales.GET(allPath, authentication.ValidateJWTAdmin(saleHandler.GetAllSales))
+	sales.PUT(idPath, authentication.ValidateJWTAdmin(saleHandler.UpdateSale))
+	sales.DELETE(idPath, authentication.ValidateJWTAdmin(saleHandler.DeleteSale))
 
 	// Rutas de productos
 	products := api.Group("/products")
-	products.POST(voidPath, productHandler.CreateProduct)
+	products.POST(voidPath, authentication.ValidateJWTAdmin(productHandler.CreateProduct))
 	products.GET(idPath, authentication.ValidateJWT(productHandler.GetProductByID))
 	products.GET(allPath, authentication.ValidateJWT(productHandler.GetAllProducts))
-	products.PUT(idPath, productHandler.UpdateProduct)
-	products.DELETE(idPath, productHandler.DeleteProduct)
+	products.PUT(idPath, authentication.ValidateJWTAdmin(productHandler.UpdateProduct))
+	products.DELETE(idPath, authentication.ValidateJWTAdmin(productHandler.DeleteProduct))
 }

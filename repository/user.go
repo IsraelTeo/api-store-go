@@ -10,7 +10,7 @@ type UserRepository interface {
 	GetByEmail(email string) (*model.User, error)
 	GetAll() ([]model.User, error)
 	Create(user *model.User) error
-	Update(user *model.User) error
+	Update(user *model.User) (*model.User, error)
 	Delete(ID uint) error
 }
 
@@ -27,6 +27,7 @@ func (r *userRepository) GetByID(ID uint) (*model.User, error) {
 	if err := r.db.First(&user, ID).Error; err != nil {
 		return nil, err
 	}
+
 	return &user, nil
 }
 
@@ -35,6 +36,7 @@ func (r *userRepository) GetByEmail(email string) (*model.User, error) {
 	if err := r.db.Where("email = ?", email).First(&user).Error; err != nil {
 		return nil, err
 	}
+
 	return &user, nil
 }
 
@@ -43,6 +45,7 @@ func (r *userRepository) GetAll() ([]model.User, error) {
 	if err := r.db.Find(&users).Error; err != nil {
 		return nil, err
 	}
+
 	return users, nil
 }
 
@@ -50,19 +53,22 @@ func (r *userRepository) Create(user *model.User) error {
 	if err := r.db.Create(user).Error; err != nil {
 		return err
 	}
+
 	return nil
 }
 
-func (r *userRepository) Update(user *model.User) error {
+func (r *userRepository) Update(user *model.User) (*model.User, error) {
 	if err := r.db.Save(user).Error; err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+
+	return user, nil
 }
 
 func (r *userRepository) Delete(ID uint) error {
 	if err := r.db.Delete(&model.User{}, ID).Error; err != nil {
 		return err
 	}
+
 	return nil
 }
