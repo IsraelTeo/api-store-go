@@ -41,11 +41,7 @@ func main() {
 	e := echo.New()
 
 	//Instanciación de Rutas
-	route.User(e, userHandler)
-	route.Auth(e, authentication)
-	route.Customer(e, customerHandler)
-	route.Sale(e, saleHandler)
-	route.Product(e, productHandler)
+	route.SetupRoutes(e, authentication, userHandler, customerHandler, saleHandler, productHandler)
 
 	//Inicialización del Validador
 	validate.InitValidator()
