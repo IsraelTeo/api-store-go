@@ -1,6 +1,8 @@
 package service
 
 import (
+	"errors"
+	"fmt"
 	"log"
 
 	"github.com/IsraelTeo/api-store-go/dto"
@@ -32,7 +34,7 @@ func (s *userService) GetBydID(ID uint) (*dto.UserResponse, error) {
 	user, err := s.repo.GetByID(ID)
 	if err != nil {
 		log.Printf("Error fetching user with ID %d: %v", ID, err)
-		return nil, err
+		return nil, fmt.Errorf("service: failed to fetch user with ID %d: %w", ID, err)
 	}
 
 	userDto := util.ToUserDTO(user)
@@ -44,7 +46,7 @@ func (s *userService) GetAll() ([]dto.UserResponse, error) {
 	users, err := s.repo.GetAll()
 	if err != nil {
 		log.Printf("Error fetching users: %v", err)
-		return nil, err
+		return nil, fmt.Errorf("service: failed to fetch users: %w", err)
 	}
 
 	if validate.VerifyListEmpty(users) {
@@ -60,7 +62,7 @@ func (s *userService) GetByEmail(email string) (*dto.UserResponse, error) {
 	user, err := s.repo.GetByEmail(email)
 	if err != nil {
 		log.Printf("Error fetching user with Email %s: %v", email, err)
-		return nil, err
+		return nil, fmt.Errorf("service: failed to fetch user with email %s: %w", email, err)
 	}
 
 	userDto := util.ToUserDTO(user)
@@ -69,15 +71,27 @@ func (s *userService) GetByEmail(email string) (*dto.UserResponse, error) {
 }
 
 func (s *userService) RegisterUser(user *model.User) error {
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
+	userData, err := s.repo.GetByEmail(user.Email)
 	if err != nil {
-		return err
+		log.Printf("Error fetching user by email: %s, error: %v", user.Email, err)
+		return fmt.Errorf("service: failed to check user by email: %w", err)
 	}
 
-	user.Password = string(hashedPassword)
+	if userData != nil {
+		log.Printf("User with email %s already exists", user.Email)
+		return errors.New("user with this email already exists")
+	}
+
+	hashedPassword, err := util.HashPassword(user.Password)
+	if err != nil {
+		log.Printf("Failed to hash password for user %s: %v", user.Email, err)
+		return fmt.Errorf("service: failed to hash password: %w", err)
+	}
+	user.Password = hashedPassword
+
 	if err := s.repo.Create(user); err != nil {
 		log.Printf("Error creating user: %+v, error: %v", user, err)
-		return err
+		return fmt.Errorf("service: failed to create user: %w", err)
 	}
 
 	return nil
@@ -95,20 +109,18 @@ func (s *userService) Update(ID uint, user *model.User) (*dto.UserResponse, erro
 		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 		if err != nil {
 			log.Printf("Error hashing password for user with ID %d: %v", ID, err)
-			return nil, err
+			return nil, fmt.Errorf("service: Error hashing password for user with ID %d %w", ID, err)
 		}
+
 		userFound.Password = string(hashedPassword)
 	}
 
-	if user.Email != "" {
-		log.Printf("Email update detected for user with ID %d. Updating email to: %s", ID, user.Email)
-		userFound.Email = user.Email
-	}
+	userFound.Email = user.Email
 
 	userUpdated, err := s.repo.Update(userFound)
 	if err != nil {
 		log.Printf("Error updating user with ID %d: %v", ID, err)
-		return nil, err
+		return nil, fmt.Errorf("service: failed to updating user with ID %d %w", ID, err)
 	}
 
 	userDto := util.ToUserDTO(userUpdated)
@@ -119,7 +131,7 @@ func (s *userService) Update(ID uint, user *model.User) (*dto.UserResponse, erro
 func (s *userService) Delete(ID uint) error {
 	if err := s.repo.Delete(ID); err != nil {
 		log.Printf("Error deleting customer with ID %d: %v", ID, err)
-		return err
+		return fmt.Errorf("service: failed to delete user with ID %d: %w", ID, err)
 	}
 
 	return nil
