@@ -1,6 +1,7 @@
 package service
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/IsraelTeo/api-store-go/model"
@@ -28,7 +29,7 @@ func (s *customerService) GetByID(ID uint) (*model.Customer, error) {
 	customer, err := s.repo.GetByID(ID)
 	if err != nil {
 		log.Printf("Error fetching customer with ID %d: %v", ID, err)
-		return nil, err
+		return nil, fmt.Errorf("service: failed to fetch customer with ID %d: %w", ID, err)
 	}
 
 	return customer, nil
@@ -38,7 +39,7 @@ func (s *customerService) GetAll() ([]model.Customer, error) {
 	customers, err := s.repo.GetAll()
 	if err != nil {
 		log.Printf("Error fetching customers: %v", err)
-		return nil, err
+		return nil, fmt.Errorf("service: failed to fetch customers: %w", err)
 	}
 
 	if validate.VerifyListEmpty(customers) {
@@ -52,7 +53,7 @@ func (s *customerService) GetAll() ([]model.Customer, error) {
 func (s *customerService) Create(customer *model.Customer) error {
 	if err := s.repo.Create(customer); err != nil {
 		log.Printf("Error creating customer: %+v, error: %v", customer, err)
-		return err
+		return fmt.Errorf("service: failed to create customer: %w", err)
 	}
 
 	return nil
@@ -62,7 +63,7 @@ func (s *customerService) Update(ID uint, customer *model.Customer) (*model.Cust
 	customerFound, err := s.repo.GetByID(ID)
 	if err != nil {
 		log.Printf("Error fetching customer with ID %d for update: %v", ID, err)
-		return nil, err
+		return nil, fmt.Errorf("service: failed to fetch customer with ID %d for update: %w", ID, err)
 	}
 
 	customerFound.DNI = customer.DNI
@@ -72,16 +73,16 @@ func (s *customerService) Update(ID uint, customer *model.Customer) (*model.Cust
 	updatedCustomer, err := s.repo.Update(customerFound)
 	if err != nil {
 		log.Printf("Error updating customer with ID %d: %v", ID, err)
-		return nil, err
+		return nil, fmt.Errorf("service: failed to update customer with ID %d: %w", ID, err)
 	}
 
 	return updatedCustomer, nil
 }
 
-func (s *customerService) Delete(id uint) error {
-	if err := s.repo.Delete(id); err != nil {
-		log.Printf("Error deleting customer with ID %d: %v", id, err)
-		return err
+func (s *customerService) Delete(ID uint) error {
+	if err := s.repo.Delete(ID); err != nil {
+		log.Printf("Error deleting customer with ID %d: %v", ID, err)
+		return fmt.Errorf("service: failed to delete customer with ID %d: %w", ID, err)
 	}
 
 	return nil

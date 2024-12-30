@@ -131,7 +131,7 @@ func (s *userService) Update(ID uint, user *model.User) (*dto.UserResponse, erro
 func (s *userService) Delete(ID uint) error {
 	if err := s.repo.Delete(ID); err != nil {
 		log.Printf("Error deleting customer with ID %d: %v", ID, err)
-		return fmt.Errorf("service: failed to delete user with ID %d: %w", ID, err)
+		return err
 	}
 
 	return nil

@@ -1,6 +1,7 @@
 package service
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/IsraelTeo/api-store-go/model"
@@ -28,7 +29,7 @@ func (s *productService) GetByID(ID uint) (*model.Product, error) {
 	product, err := s.repo.GetByID(ID)
 	if err != nil {
 		log.Printf("Error fetching product with ID %d: %v", ID, err)
-		return nil, err
+		return nil, fmt.Errorf("service: failed to fetch product with ID %d: %w", ID, err)
 	}
 
 	return product, nil
@@ -38,7 +39,7 @@ func (s *productService) GetAll() ([]model.Product, error) {
 	products, err := s.repo.GetAll()
 	if err != nil {
 		log.Printf("Error fetching products: %v", err)
-		return nil, err
+		return nil, fmt.Errorf("service: failed to fetch products: %w", err)
 	}
 
 	if validate.VerifyListEmpty(products) {
@@ -52,7 +53,7 @@ func (s *productService) GetAll() ([]model.Product, error) {
 func (s *productService) Create(product *model.Product) error {
 	if err := s.repo.Create(product); err != nil {
 		log.Printf("Error creating product: %+v, error: %v", product, err)
-		return err
+		return fmt.Errorf("service: failed to create product: %w", err)
 	}
 
 	return nil
@@ -62,7 +63,7 @@ func (s *productService) Update(ID uint, product *model.Product) (*model.Product
 	productFound, err := s.repo.GetByID(ID)
 	if err != nil {
 		log.Printf("Error fetching user with ID %d for update: %v", ID, err)
-		return nil, err
+		return nil, fmt.Errorf("service: failed to fetch product with ID %d for update: %w", ID, err)
 	}
 
 	productFound.Mark = product.Mark
@@ -72,7 +73,7 @@ func (s *productService) Update(ID uint, product *model.Product) (*model.Product
 	updatedProduct, err := s.repo.Update(productFound)
 	if err != nil {
 		log.Printf("Error updating product with ID %d: %v", ID, err)
-		return nil, err
+		return nil, fmt.Errorf("service: failed to update product with ID %d: %w", ID, err)
 	}
 
 	return updatedProduct, nil
@@ -81,7 +82,7 @@ func (s *productService) Update(ID uint, product *model.Product) (*model.Product
 func (s *productService) Delete(ID uint) error {
 	if err := s.repo.Delete(ID); err != nil {
 		log.Printf("Error deleting product with ID %d: %v", ID, err)
-		return err
+		return fmt.Errorf("service: failed to delete product with ID %d: %w", ID, err)
 	}
 
 	return nil
