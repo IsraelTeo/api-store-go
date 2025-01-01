@@ -1,4 +1,4 @@
-package authentication
+package auth
 
 import (
 	"errors"
@@ -13,19 +13,28 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-func GenerateToken(user model.User) (string, error) {
-	payload := jwt.MapClaims{
-		"email":      user.Email,                           // Correo del usuario
-		"authorized": true,                                 // Indica si el usuario está autorizado
-		"is_admin":   user.IsAdmin,                         // Indica si el usuario es administrador
-		"iat":        time.Now().Unix(),                    // Tiempo actual en formato Unix (emisión del token)
-		"exp":        time.Now().Add(time.Hour * 2).Unix(), // Expiración del token en 2 horas
+func GenerateToken(user *model.User) (string, error) {
+	expiration := os.Getenv("JWT_EXP")
+	secret := os.Getenv("API_SECRET")
+	issuedAt := time.Now().Unix()
+
+	if expiration == "" || secret == "" {
+		return "", fmt.Errorf("missing JWT_EXP or API_SECRET environment variable")
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, payload)             // Crea un nuevo token usando el algoritmo de firma HS256 y el payload
-	tokenString, err := token.SignedString([]byte(os.Getenv("API_SECRET"))) // Firma el token con una clave secreta obtenida de las variables de entorno
+	// Crear payload con claims
+	payload := jwt.MapClaims{
+		"email":      user.Email,   // Correo del usuario
+		"authorized": true,         // Indica si el usuario está autorizado
+		"is_admin":   user.IsAdmin, // Indica si el usuario es administrador
+		"iat":        issuedAt,     // Tiempo actual en formato Unix (emisión del token)
+		"exp":        expiration,   // Expiración del token
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, payload) // Crea un nuevo token usando el algoritmo de firma HS256 y el payload
+	tokenString, err := token.SignedString([]byte(secret))      // Firma el token con una clave secreta obtenida de las variables de entorno
 	if err != nil {
-		log.Printf("Error signing the token: %v\n", err)
+		log.Printf("Error signing the token: %\n", err)
 		return "", err
 	}
 
@@ -35,7 +44,7 @@ func GenerateToken(user model.User) (string, error) {
 func ValidateToken(c echo.Context) (model.User, error) {
 	token, err := GetToken(c)
 	if err != nil {
-		log.Printf("Error retrieving token: %v\n", err)
+		log.Printf("Error retrieving token: %v", err)
 		return model.User{}, fmt.Errorf("no token found in request: %w", err)
 	}
 
@@ -66,11 +75,11 @@ func ValidateToken(c echo.Context) (model.User, error) {
 }
 
 func GetToken(c echo.Context) (string, error) {
-	token := c.QueryParam("token") 
+	token := c.QueryParam("token")
 	if token != "" {
 		return token, nil
 	}
-	
+
 	authHeader := c.Request().Header.Get("Authorization")
 	if len(strings.Split(authHeader, " ")) == 2 {
 		return strings.Split(authHeader, " ")[1], nil

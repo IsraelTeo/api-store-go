@@ -1,10 +1,10 @@
-package authentication
+package auth
 
 import (
 	"log"
 	"net/http"
 
-	"github.com/IsraelTeo/api-store-go/payload"
+	"github.com/IsraelTeo/api-store-go/response"
 	"github.com/labstack/echo/v4"
 )
 
@@ -13,8 +13,7 @@ func ValidateJWT(next echo.HandlerFunc) echo.HandlerFunc {
 		_, err := ValidateToken(c)
 		if err != nil {
 			log.Printf("Invalid token: %v", err)
-			response := payload.NewResponse(payload.MessageTypeError, "Invalid token.", nil)
-			return c.JSON(http.StatusUnauthorized, response)
+			return response.WriteError(c, http.StatusUnauthorized, "Invalid token.", nil)
 		}
 		return next(c)
 	}
@@ -25,14 +24,12 @@ func ValidateJWTAdmin(next echo.HandlerFunc) echo.HandlerFunc {
 		userData, err := ValidateToken(c)
 		if err != nil {
 			log.Printf("Invalid token %v", err)
-			response := payload.NewResponse(payload.MessageTypeError, "Invalid token", nil)
-			return c.JSON(http.StatusUnauthorized, response)
+			return response.WriteError(c, http.StatusUnauthorized, "Invalid token.", nil)
 		}
 
 		if !userData.IsAdmin {
 			log.Printf("Not admin %v", err)
-			response := payload.NewResponse(payload.MessageTypeError, "Not admin", nil)
-			return c.JSON(http.StatusForbidden, response)
+			return response.WriteError(c, http.StatusForbidden, "Not admin", nil)
 		}
 
 		return next(c)

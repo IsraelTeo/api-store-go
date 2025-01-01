@@ -7,6 +7,7 @@ import (
 	"github.com/IsraelTeo/api-store-go/model"
 	"github.com/IsraelTeo/api-store-go/payload"
 	"github.com/IsraelTeo/api-store-go/service"
+	"github.com/IsraelTeo/api-store-go/util"
 	"github.com/IsraelTeo/api-store-go/validate"
 	"github.com/labstack/echo/v4"
 )
@@ -58,6 +59,22 @@ func (h *CustomerHandler) CreateCustomer(c echo.Context) error {
 	if err := h.customerService.Create(&customer); err != nil {
 		response := payload.NewResponse(payload.MessageTypeError, "Failed to save customer", nil)
 		return c.JSON(http.StatusInternalServerError, response)
+	}
+
+	response := payload.NewResponse(payload.MessageTypeSuccess, "Customer created successfully", nil)
+	return c.JSON(http.StatusCreated, response)
+}
+
+func (h *CustomerHandler) CreateCustomer(c echo.Context) error {
+	customer := model.Customer{}
+	if err := c.Bind(&customer); err != nil {
+		log.Printf("Error decoding request body: %v", err)
+		return util.WriteError(c, http.StatusBadRequest, "Bad request", err)
+	}
+
+	if err := h.customerService.Create(&customer); err != nil {
+		response := payload.NewResponse(payload.MessageTypeError, "Failed to save customer", nil)
+		return util.WriteError(c, http.StatusInternalServerError, "Bad request", err)
 	}
 
 	response := payload.NewResponse(payload.MessageTypeSuccess, "Customer created successfully", nil)
