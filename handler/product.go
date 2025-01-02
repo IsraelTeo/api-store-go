@@ -20,12 +20,12 @@ func NewProductHandler(productService service.ProductService) *ProductHandler {
 func (h *ProductHandler) GetProductByID(c echo.Context) error {
 	ID, err := util.ParseID(c)
 	if err != nil {
-		return util.WriteError(c, http.StatusBadRequest, "Invalid ID", nil)
+		return util.WriteError(c, http.StatusBadRequest, "Invalid ID", err)
 	}
 
 	product, err := h.productService.GetByID(uint(ID))
 	if err != nil {
-		return util.WriteError(c, http.StatusNotFound, "Product not found", nil)
+		return util.WriteError(c, http.StatusNotFound, "Product not found", err)
 	}
 
 	return util.WriteResponse(c, http.StatusOK, "Product found", product)

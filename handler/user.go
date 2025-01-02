@@ -20,12 +20,12 @@ func NewUserHandler(service service.UserService) *UserHandler {
 func (h *UserHandler) GetUserByID(c echo.Context) error {
 	ID, err := util.ParseID(c)
 	if err != nil {
-		return util.WriteError(c, http.StatusBadRequest, "Invalid ID.", nil)
+		return util.WriteError(c, http.StatusBadRequest, "Invalid ID.", err)
 	}
 
 	user, err := h.service.GetByID(uint(ID))
 	if err != nil {
-		return util.WriteError(c, http.StatusNotFound, "User not found", nil)
+		return util.WriteError(c, http.StatusNotFound, "User not found", err)
 	}
 
 	return util.WriteResponse(c, http.StatusOK, "User found successfully", user)

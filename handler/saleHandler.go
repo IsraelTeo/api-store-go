@@ -20,12 +20,12 @@ func NewSaleHandler(service service.SaleService) *SaleHandler {
 func (h *SaleHandler) GetSaleByID(c echo.Context) error {
 	ID, err := util.ParseID(c)
 	if err != nil {
-		return util.WriteError(c, http.StatusBadRequest, "Invalid ID", nil)
+		return util.WriteError(c, http.StatusBadRequest, "Invalid ID", err)
 	}
 
 	sale, err := h.service.GetByID(uint(ID))
 	if err != nil {
-		return util.WriteError(c, http.StatusNotFound, "Sale not found", nil)
+		return util.WriteError(c, http.StatusNotFound, "Sale not found", err)
 	}
 
 	return util.WriteResponse(c, http.StatusOK, "Sale found successfully", sale)
