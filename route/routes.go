@@ -36,7 +36,7 @@ func RunRoutes(e *echo.Echo) {
 	setupProductRoutes(api)
 }
 
-// Configura las rutas de autenticación
+// Configuración de rutas de autenticación
 func setupAuthRoutes(api *echo.Group) {
 	userRepository := repository.NewUserRepository(db.GDB)
 	authService := auth.NewLogin(userRepository)
