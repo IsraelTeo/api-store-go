@@ -52,8 +52,8 @@ func main() {
 	e.Use(middleware.Logger())
 
 	//Inicia servidor en el puerto: 8080
-	if err := e.Start(":8080"); err != nil {
-		log.Fatalf("error starting server %v", err)
+	if err := config.StartServer(e, ":8080"); err != nil {
+		log.Fatalf("%v", err)
 	}
-	fmt.Println("successful! Server running in port: 8080")
+
 }

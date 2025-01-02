@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"strconv"
@@ -43,8 +44,10 @@ func InitConfig() *Config {
 	}
 }
 
-func StartServer(e *echo.Echo, port string) {
+func StartServer(e *echo.Echo, port string) error {
 	if err := e.Start(port); err != nil {
-		log.Fatalf("Error starting server on port %s: %v", port, err)
+		return fmt.Errorf("error starting server: %v", err)
 	}
+	fmt.Printf("successful! Server running in port: %s\n", port)
+	return nil
 }
