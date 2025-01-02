@@ -17,8 +17,9 @@ func NewResponse(message string, data interface{}) Response {
 }*/
 
 func WriteResponse(c echo.Context, status int, message string, data interface{}) error {
-	return c.JSON(status, map[string]string{
+	return c.JSON(status, map[string]interface{}{
 		"message": message,
+		"data":    data,
 	})
 }
 

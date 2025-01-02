@@ -1,7 +1,6 @@
 package service
 
 import (
-	"errors"
 	"fmt"
 	"log"
 
@@ -16,7 +15,7 @@ type UserService interface {
 	GetByEmail(email string) (*model.User, error)
 	GetAll() ([]model.User, error)
 	RegisterUser(user *model.RegisterUserPayload) error
-	Update(ID uint, user *model.User) (*model.User, error)
+	Update(ID uint, user model.RegisterUserPayload) (*model.User, error)
 	Delete(ID uint) error
 }
 
@@ -64,15 +63,15 @@ func (s *userService) GetByEmail(email string) (*model.User, error) {
 }
 
 func (s *userService) RegisterUser(user *model.RegisterUserPayload) error {
-	userData, err := s.repo.GetByEmail(user.Email)
+	isExists, err := util.CheckEmailExists("email", user.Email, &model.User{})
 	if err != nil {
-		log.Printf("Error checking if user exists: %v", err)
-		return fmt.Errorf("service: failed to fetch user by email %w", err)
+		log.Printf("Error checking if email exists %s: %v", user.Email, err)
+		return fmt.Errorf("service: error checking email existence: %w", err)
 	}
 
-	if userData != nil {
-		log.Printf("User with email %s already exists", user.Email)
-		return errors.New("user with this email already exists")
+	if isExists {
+		log.Printf("Email already exists: %s", user.Email)
+		return fmt.Errorf("service: email already exists")
 	}
 
 	hashedPassword, err := auth.HashPassword(user.Password)
@@ -92,7 +91,7 @@ func (s *userService) RegisterUser(user *model.RegisterUserPayload) error {
 	return nil
 }
 
-func (s *userService) Update(ID uint, user *model.User) (*model.User, error) {
+func (s *userService) Update(ID uint, user model.RegisterUserPayload) (*model.User, error) {
 	userFound, err := s.repo.GetByID(ID)
 	if err != nil {
 		log.Printf("Error fetching user with ID %d for update: %v", ID, err)
@@ -105,12 +104,14 @@ func (s *userService) Update(ID uint, user *model.User) (*model.User, error) {
 		return nil, fmt.Errorf("service: failed to hash password: %w", err)
 	}
 
+	// Actualizar campos
 	userFound.FirstName = user.FirstName
 	userFound.LastName = user.LastName
 	userFound.Email = user.Email
 	userFound.Password = hashedPassword
 	userFound.IsAdmin = user.IsAdmin
 
+	// Llamada al repositorio con el modelo correcto
 	userUpdated, err := s.repo.Update(userFound)
 	if err != nil {
 		log.Printf("Error updating user with ID %d: %v", ID, err)

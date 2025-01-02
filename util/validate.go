@@ -32,22 +32,21 @@ func VerifyListEmpty[T any](list []T) bool {
 	return len(list) == 0
 }
 
-func checkIfFieldExists[T any](field string, value interface{}, model *T) (bool, error) {
+func CheckEmailExists[T any](field string, value interface{}, model *T) (bool, error) {
 	err := db.GDB.Where(field+" = ?", value).First(model).Error
-	if err == nil {
-		return true, nil
-	}
 
+	// Si el error es "record not found", significa que el email NO existe
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return false, nil
 	}
 
-	return false, err
-}
+	// Si hay otro error, retornarlo
+	if err != nil {
+		return false, err
+	}
 
-func ValidateUniqueField[T any](field, value string, model *T) (bool, error) {
-	exists, err := checkIfFieldExists(field, value, model)
-	return exists, err
+	// Si no hay error, el registro sí existe
+	return true, nil
 }
 
 func IsEmpty(s string) bool {

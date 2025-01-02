@@ -17,3 +17,17 @@ func ToUser(user *model.RegisterUserPayload) *model.User {
 		IsAdmin:   user.IsAdmin,
 	}
 }
+
+func ToUserUpdated(user *model.User) *model.RegisterUserPayload {
+	if user == nil {
+		return nil
+	}
+
+	return &model.RegisterUserPayload{
+		FirstName: user.FirstName,
+		LastName:  user.LastName,
+		Email:     user.Email,
+		Password:  user.Password,
+		IsAdmin:   user.IsAdmin,
+	}
+}

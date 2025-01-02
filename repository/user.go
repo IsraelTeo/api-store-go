@@ -58,10 +58,9 @@ func (r *userRepository) Create(user *model.User) error {
 }
 
 func (r *userRepository) Update(user *model.User) (*model.User, error) {
-	if err := r.db.Save(user).Error; err != nil {
+	if err := r.db.Model(&model.User{}).Where("id = ?", user.ID).Updates(user).Error; err != nil {
 		return nil, err
 	}
-
 	return user, nil
 }
 

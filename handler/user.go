@@ -59,12 +59,12 @@ func (h *UserHandler) UpdateUser(c echo.Context) error {
 		return util.WriteError(c, http.StatusBadRequest, "Invalid ID format", err)
 	}
 
-	user := model.User{}
+	user := model.RegisterUserPayload{}
 	if err := c.Bind(&user); err != nil {
 		return util.WriteError(c, http.StatusBadRequest, "Bad request", err)
 	}
 
-	userUpdated, err := h.service.Update(uint(ID), &user)
+	userUpdated, err := h.service.Update(uint(ID), user)
 	if err != nil {
 		return util.WriteError(c, http.StatusInternalServerError, "Failed to update user", err)
 	}
