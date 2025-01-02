@@ -73,12 +73,10 @@ func (h *CustomerHandler) CreateCustomer(c echo.Context) error {
 	}
 
 	if err := h.customerService.Create(&customer); err != nil {
-		response := payload.NewResponse(payload.MessageTypeError, "Failed to save customer", nil)
-		return util.WriteError(c, http.StatusInternalServerError, "Bad request", err)
+		return util.WriteError(c, http.StatusInternalServerError, "Failed to save customer", err)
 	}
 
-	response := payload.NewResponse(payload.MessageTypeSuccess, "Customer created successfully", nil)
-	return c.JSON(http.StatusCreated, response)
+	return util.WriteResponse(c,http.StatusCreated, "Customer created successfully", nil )
 }
 
 func (h *CustomerHandler) UpdateCustomer(c echo.Context) error {

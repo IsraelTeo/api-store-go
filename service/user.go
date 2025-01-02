@@ -5,20 +5,19 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/IsraelTeo/api-store-go/dto"
+	"github.com/IsraelTeo/api-store-go/auth"
 	"github.com/IsraelTeo/api-store-go/model"
 	"github.com/IsraelTeo/api-store-go/repository"
 	"github.com/IsraelTeo/api-store-go/util"
 	"github.com/IsraelTeo/api-store-go/validate"
-	"golang.org/x/crypto/bcrypt"
 )
 
 type UserService interface {
-	GetBydID(ID uint) (*dto.UserResponse, error)
-	GetByEmail(email string) (*dto.UserResponse, error)
-	GetAll() ([]dto.UserResponse, error)
-	RegisterUser(user *model.User) error
-	Update(ID uint, user *model.User) (*dto.UserResponse, error)
+	GetBydID(ID uint) (*model.User, error)
+	GetByEmail(email string) (*model.User, error)
+	GetAll() ([]model.User, error)
+	RegisterUser(user *model.RegisterUserPayload) error
+	Update(ID uint, user *model.User) (*model.User, error)
 	Delete(ID uint) error
 }
 
@@ -30,19 +29,17 @@ func NewUserService(repo repository.UserRepository) UserService {
 	return &userService{repo: repo}
 }
 
-func (s *userService) GetBydID(ID uint) (*dto.UserResponse, error) {
+func (s *userService) GetBydID(ID uint) (*model.User, error) {
 	user, err := s.repo.GetByID(ID)
 	if err != nil {
 		log.Printf("Error fetching user with ID %d: %v", ID, err)
 		return nil, fmt.Errorf("service: failed to fetch user with ID %d: %w", ID, err)
 	}
 
-	userDto := util.ToUserDTO(user)
-
-	return userDto, nil
+	return user, nil
 }
 
-func (s *userService) GetAll() ([]dto.UserResponse, error) {
+func (s *userService) GetAll() ([]model.User, error) {
 	users, err := s.repo.GetAll()
 	if err != nil {
 		log.Printf("Error fetching users: %v", err)
@@ -51,30 +48,27 @@ func (s *userService) GetAll() ([]dto.UserResponse, error) {
 
 	if validate.VerifyListEmpty(users) {
 		log.Println("Customers list is empty")
-		return []dto.UserResponse{}, nil
+		return []model.User{}, nil
 	}
 
-	usersDto := util.ToListUserDTO(users)
-	return usersDto, nil
+	return users, nil
 }
 
-func (s *userService) GetByEmail(email string) (*dto.UserResponse, error) {
+func (s *userService) GetByEmail(email string) (*model.User, error) {
 	user, err := s.repo.GetByEmail(email)
 	if err != nil {
 		log.Printf("Error fetching user with Email %s: %v", email, err)
 		return nil, fmt.Errorf("service: failed to fetch user with email %s: %w", email, err)
 	}
 
-	userDto := util.ToUserDTO(user)
-
-	return userDto, nil
+	return user, nil
 }
 
-func (s *userService) RegisterUser(user *model.User) error {
+func (s *userService) RegisterUser(user *model.RegisterUserPayload) error {
 	userData, err := s.repo.GetByEmail(user.Email)
 	if err != nil {
-		log.Printf("Error fetching user by email: %s, error: %v", user.Email, err)
-		return fmt.Errorf("service: failed to check user by email: %w", err)
+		log.Printf("Error checking if user exists: %v", err)
+		return fmt.Errorf("service: failed to fetch user by email %w", err)
 	}
 
 	if userData != nil {
@@ -82,14 +76,16 @@ func (s *userService) RegisterUser(user *model.User) error {
 		return errors.New("user with this email already exists")
 	}
 
-	hashedPassword, err := util.HashPassword(user.Password)
+	hashedPassword, err := auth.HashPassword(user.Password)
 	if err != nil {
 		log.Printf("Failed to hash password for user %s: %v", user.Email, err)
 		return fmt.Errorf("service: failed to hash password: %w", err)
 	}
-	user.Password = hashedPassword
 
-	if err := s.repo.Create(user); err != nil {
+	user.Password = hashedPassword
+	userSave := util.ToUser(user)
+
+	if err := s.repo.Create(userSave); err != nil {
 		log.Printf("Error creating user: %+v, error: %v", user, err)
 		return fmt.Errorf("service: failed to create user: %w", err)
 	}
@@ -97,35 +93,32 @@ func (s *userService) RegisterUser(user *model.User) error {
 	return nil
 }
 
-func (s *userService) Update(ID uint, user *model.User) (*dto.UserResponse, error) {
+func (s *userService) Update(ID uint, user *model.User) (*model.User, error) {
 	userFound, err := s.repo.GetByID(ID)
 	if err != nil {
 		log.Printf("Error fetching user with ID %d for update: %v", ID, err)
-		return nil, err
+		return nil, fmt.Errorf("user with ID %d not found", ID)
 	}
 
-	if user.Password != "" {
-		log.Printf("Password update detected for user with ID %d. Hashing new password.", ID)
-		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
-		if err != nil {
-			log.Printf("Error hashing password for user with ID %d: %v", ID, err)
-			return nil, fmt.Errorf("service: Error hashing password for user with ID %d %w", ID, err)
-		}
-
-		userFound.Password = string(hashedPassword)
+	hashedPassword, err := auth.HashPassword(user.Password)
+	if err != nil {
+		log.Printf("Failed to hash password for user %s: %v", user.Email, err)
+		return nil, fmt.Errorf("service: failed to hash password: %w", err)
 	}
 
+	userFound.FirstName = user.FirstName
+	userFound.LastName = user.LastName
 	userFound.Email = user.Email
+	userFound.Password = hashedPassword
+	userFound.IsAdmin = user.IsAdmin
 
 	userUpdated, err := s.repo.Update(userFound)
 	if err != nil {
 		log.Printf("Error updating user with ID %d: %v", ID, err)
-		return nil, fmt.Errorf("service: failed to updating user with ID %d %w", ID, err)
+		return nil, fmt.Errorf("service: failed to update user with ID %d: %w", ID, err)
 	}
 
-	userDto := util.ToUserDTO(userUpdated)
-
-	return userDto, nil
+	return userUpdated, nil
 }
 
 func (s *userService) Delete(ID uint) error {

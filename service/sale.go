@@ -1,6 +1,7 @@
 package service
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/IsraelTeo/api-store-go/model"
@@ -28,7 +29,7 @@ func (s *saleService) GetByID(ID uint) (*model.Sale, error) {
 	sale, err := s.repo.GetByID(ID)
 	if err != nil {
 		log.Printf("Error fetching sale with ID %d: %v", ID, err)
-		return nil, err
+		return nil, fmt.Errorf("service: failed to fetch sale with ID %d: %w", ID, err)
 	}
 
 	return sale, nil
@@ -38,7 +39,7 @@ func (s *saleService) GetAll() ([]model.Sale, error) {
 	sales, err := s.repo.GetAll()
 	if err != nil {
 		log.Printf("Error fetching sales: %v", err)
-		return nil, err
+		return nil, fmt.Errorf("service: failed to fetch sales: %w", err)
 	}
 
 	if validate.VerifyListEmpty(sales) {
@@ -50,17 +51,13 @@ func (s *saleService) GetAll() ([]model.Sale, error) {
 }
 
 func (s *saleService) Create(sale *model.Sale) error {
-	amount, err := calculateAmount(sale.Products)
-	if err != nil {
-		log.Printf("Error when adding total amount, error: %v", err)
-		return err
-	}
+	amount := calculateAmount(sale.Products)
 
 	sale.TotalAmount = amount
 
 	if err := s.repo.Create(sale); err != nil {
 		log.Printf("Error creating sale: %+v, error: %v", sale, err)
-		return err
+		return fmt.Errorf("service: failed to create sale: %w", err)
 	}
 
 	return nil
@@ -70,14 +67,10 @@ func (s *saleService) Update(ID uint, sale *model.Sale) (*model.Sale, error) {
 	saleFound, err := s.repo.GetByID(ID)
 	if err != nil {
 		log.Printf("Error fetching user with ID %d for update: %v", ID, err)
-		return nil, err
+		return nil, fmt.Errorf("service: failed to fetch sale with ID %d for update: %w", ID, err)
 	}
 
-	amount, err := calculateAmount(sale.Products)
-	if err != nil {
-		log.Printf("Error to updating total amount, error: %v", err)
-		return nil, err
-	}
+	amount := calculateAmount(sale.Products)
 
 	saleFound.Customer = sale.Customer
 	saleFound.Products = sale.Products
@@ -86,7 +79,7 @@ func (s *saleService) Update(ID uint, sale *model.Sale) (*model.Sale, error) {
 	saleUpdated, err := s.repo.Update(saleFound)
 	if err != nil {
 		log.Printf("Error updating sale with ID %d: %v", ID, err)
-		return nil, err
+		return nil, fmt.Errorf("service: failed to update sale with ID %d: %w", ID, err)
 	}
 
 	return saleUpdated, nil
@@ -95,16 +88,16 @@ func (s *saleService) Update(ID uint, sale *model.Sale) (*model.Sale, error) {
 func (s *saleService) Delete(ID uint) error {
 	if err := s.repo.Delete(ID); err != nil {
 		log.Printf("Error deleting sale with ID %d: %v", ID, err)
-		return err
+		return fmt.Errorf("service: failed to delete sale with ID %d: %w", ID, err)
 	}
 
 	return nil
 }
 
-func calculateAmount(products []model.Product) (float64, error) {
+func calculateAmount(products []model.Product) float64 {
 	if validate.VerifyListEmpty(products) {
 		log.Println("The product list is empty, there is no total amount.")
-		return 0, nil
+		return 0
 	}
 
 	var totalAmount float64
@@ -113,7 +106,7 @@ func calculateAmount(products []model.Product) (float64, error) {
 		totalAmount += p.Price
 	}
 
-	return totalAmount, nil
+	return totalAmount
 }
 
 //Obtener la sumatoria del monto y también cantidad total de ventas de un determinado dia -> ruta: /{fecha_venta}

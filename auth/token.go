@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -13,26 +14,42 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
+type Claims struct {
+	Email      string `json:"email"`
+	Authorized bool   `json:"authorized"`
+	IsAdmin    bool   `json:"is_admin"`
+	jwt.StandardClaims
+}
+
 func GenerateToken(user *model.User) (string, error) {
-	expiration := os.Getenv("JWT_EXP")
+	expirationStr := os.Getenv("JWT_EXP")
 	secret := os.Getenv("API_SECRET")
 	issuedAt := time.Now().Unix()
 
-	if expiration == "" || secret == "" {
+	// Verifica si la variable de entorno está vacía
+	if expirationStr == "" || secret == "" {
 		return "", fmt.Errorf("missing JWT_EXP or API_SECRET environment variable")
 	}
 
-	// Crear payload con claims
-	payload := jwt.MapClaims{
-		"email":      user.Email,   // Correo del usuario
-		"authorized": true,         // Indica si el usuario está autorizado
-		"is_admin":   user.IsAdmin, // Indica si el usuario es administrador
-		"iat":        issuedAt,     // Tiempo actual en formato Unix (emisión del token)
-		"exp":        expiration,   // Expiración del token
+	// Convierte el expirationStr (que es un string) a un entero
+	expiration, err := strconv.ParseInt(expirationStr, 10, 64)
+	if err != nil {
+		return "", fmt.Errorf("invalid JWT_EXP value: %v", err)
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, payload) // Crea un nuevo token usando el algoritmo de firma HS256 y el payload
-	tokenString, err := token.SignedString([]byte(secret))      // Firma el token con una clave secreta obtenida de las variables de entorno
+	//Creando claims
+	claims := Claims{
+		Email:      user.Email,
+		Authorized: true,
+		IsAdmin:    user.IsAdmin,
+		StandardClaims: jwt.StandardClaims{
+			IssuedAt:  issuedAt,
+			ExpiresAt: time.Now().Add(time.Duration(expiration) * time.Second).Unix(), // Usa time.Duration para convertir segundos
+		},
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims) // Crea un nuevo token usando el algoritmo de firma HS256 y los claims
+	tokenString, err := token.SignedString([]byte(secret))     // Firma el token con una clave secreta obtenida de las variables de entorno
 	if err != nil {
 		log.Printf("Error signing the token: %\n", err)
 		return "", err

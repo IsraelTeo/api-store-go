@@ -7,14 +7,8 @@ import (
 	"github.com/IsraelTeo/api-store-go/model"
 	"github.com/IsraelTeo/api-store-go/repository"
 	"github.com/IsraelTeo/api-store-go/response"
-	"github.com/golang-jwt/jwt"
 	"github.com/labstack/echo/v4"
 )
-
-type Claims struct {
-	Email string `json:"email"`
-	jwt.StandardClaims
-}
 
 type LoginService interface {
 	Login(c echo.Context) error
@@ -24,7 +18,7 @@ type UserLogin struct {
 	repo repository.UserRepository
 }
 
-func NewAuthService(repo repository.UserRepository) LoginService {
+func NewLogin(repo repository.UserRepository) LoginService {
 	return &UserLogin{repo: repo}
 }
 

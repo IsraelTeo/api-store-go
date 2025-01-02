@@ -3,13 +3,11 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
 
-	"github.com/IsraelTeo/api-store-go/authentication"
+	"github.com/IsraelTeo/api-store-go/config"
 	"github.com/IsraelTeo/api-store-go/db"
-	"github.com/IsraelTeo/api-store-go/handler"
-	"github.com/IsraelTeo/api-store-go/repository"
 	"github.com/IsraelTeo/api-store-go/route"
-	"github.com/IsraelTeo/api-store-go/service"
 	"github.com/IsraelTeo/api-store-go/validate"
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
@@ -18,67 +16,45 @@ import (
 
 func main() {
 
-	// Carga de variables de entorno
+	// 1️⃣ **Cargar variables de entorno**
 	if err := godotenv.Load(); err != nil {
-		log.Fatal("Error loanding .env main")
+		log.Fatal("Error loading .env file")
 	}
 
-	//Conexión a la base de datos
+	// 2️⃣ **Conexión a la base de datos**
 	if err := db.Connection(); err != nil {
-		log.Fatalf("Error trying to connect with database: %v", err)
+		log.Fatalf("Error connecting to database: %v", err)
 	}
-	fmt.Println("\nDatabase connection ok")
+	fmt.Println("✅ Database connection successful")
 
-	//Migración de entidades
+	// 3️⃣ **Migración de entidades**
 	if err := db.MigrateDB(); err != nil {
 		log.Fatalf("Error migrating database: %v", err)
 	}
-	fmt.Println("Database migration successful")
+	fmt.Println("✅ Database migration successful")
 
-	fmt.Println("Starting server on port 8080...")
-
-	//Se crea repositorios, servicios y handlers.
-	userRepository := repository.NewUserRepository(db.GDB)
-	userService := service.NewUserService(userRepository)
-	userHandler := handler.NewUserHandler(userService)
-
-	authentication := authentication.NewAuthService(userRepository)
-
-	customerRepository := repository.NewCustomerRepository(db.GDB)
-	customerService := service.NewCustomerService(customerRepository)
-	customerHandler := handler.NewCustomerHandler(customerService)
-
-	saleRepository := repository.NewSaleRepository(db.GDB)
-	saleService := service.NewSaleRepository(saleRepository)
-	saleHandler := handler.NewSaleHandler(saleService)
-
-	producRepository := repository.NewProductRepository(db.GDB)
-	producService := service.NewProductService(producRepository)
-	productHandler := handler.NewProductHandler(producService)
-
-	//Crea una nueva instancia del servidor web Echo.
+	// 4️⃣ **Inicializar servidor Echo**
 	e := echo.New()
 
-	//Instanciación de Rutas
-	route.SetupRoutes(e, authentication, userHandler, customerHandler, saleHandler, productHandler)
+	// 🔑 Asignar el validador a la instancia de Echo
+	e.Validator = validate.InitValidator()
 
-	//Inicialización del Validador
-	validate.InitValidator()
+	// Instanciar Rutas
+	route.RunRoutes(e)
 
-	//Este middleware agrega un logger personalizado para registrar el método HTTP, URI, estado y tiempo de latencia de cada solicitud.
+	// 6️⃣ **Middlewares**
 	e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
 		Format: "method=${method}, uri=${uri}, status=${status}, time=${latency_human}\n",
 	}))
-
-	//Este middleware se asegura de que cualquier error de pánico en el servidor sea manejado correctamente y no detenga la ejecución.
 	e.Use(middleware.Recover())
-
-	//Registra cada solicitud HTTP de manera estándar.
 	e.Use(middleware.Logger())
 
-	//Se inicia el servidor en el puerto 8080
-	if err := e.Start(":8080"); err != nil {
-		log.Fatalf("Error starting server: %v", err)
+	// 8️⃣ **Iniciar Servidor**
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
 	}
 
+	config.StartServer(e, ":"+port)
+	fmt.Printf("🚀 Starting server on port %s...\n", port)
 }

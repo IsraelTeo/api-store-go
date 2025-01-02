@@ -5,6 +5,8 @@ import (
 	"log"
 	"os"
 	"strconv"
+
+	"github.com/labstack/echo/v4"
 )
 
 // Se define una estructura llamada Config que agrupa varios de configuración
@@ -37,5 +39,11 @@ func InitConfig() *Config {
 		DBName:                os.Getenv("DB_NAME"),
 		JWTExpirationInSecond: jwtExp,
 		JWTSecret:             os.Getenv("API_SECRET"),
+	}
+}
+
+func StartServer(e *echo.Echo, port string) {
+	if err := e.Start(port); err != nil {
+		log.Fatalf("Error starting server on port %s: %v", port, err)
 	}
 }

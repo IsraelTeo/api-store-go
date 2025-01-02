@@ -11,16 +11,21 @@ import (
 	"gorm.io/gorm"
 )
 
-var validate *validator.Validate
-
-func InitValidator() {
-	if validate == nil {
-		validate = validator.New()
-	}
+// CustomValidator estructura para validación
+type CustomValidator struct {
+	Validator *validator.Validate
 }
 
-func ValidateEntity[T any](model *T) error {
-	return validate.Struct(model)
+// Validate implementa el método de la interfaz echo.Validator
+func (v *CustomValidator) Validate(i interface{}) error {
+	return v.Validator.Struct(i)
+}
+
+// InitValidator inicializa el validador
+func InitValidator() *CustomValidator {
+	return &CustomValidator{
+		Validator: validator.New(),
+	}
 }
 
 func VerifyListEmpty[T any](list []T) bool {
