@@ -6,7 +6,7 @@ import (
 
 	"github.com/IsraelTeo/api-store-go/model"
 	"github.com/IsraelTeo/api-store-go/repository"
-	"github.com/IsraelTeo/api-store-go/validate"
+	"github.com/IsraelTeo/api-store-go/util"
 )
 
 type ProductService interface {
@@ -42,7 +42,7 @@ func (s *productService) GetAll() ([]model.Product, error) {
 		return nil, fmt.Errorf("service: failed to fetch products: %w", err)
 	}
 
-	if validate.VerifyListEmpty(products) {
+	if util.VerifyListEmpty(products) {
 		log.Println("Products list is empty")
 		return products, nil
 	}

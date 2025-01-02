@@ -6,7 +6,7 @@ import (
 
 	"github.com/IsraelTeo/api-store-go/model"
 	"github.com/IsraelTeo/api-store-go/repository"
-	"github.com/IsraelTeo/api-store-go/validate"
+	"github.com/IsraelTeo/api-store-go/util"
 )
 
 type CustomerService interface {
@@ -42,7 +42,7 @@ func (s *customerService) GetAll() ([]model.Customer, error) {
 		return nil, fmt.Errorf("service: failed to fetch customers: %w", err)
 	}
 
-	if validate.VerifyListEmpty(customers) {
+	if util.VerifyListEmpty(customers) {
 		log.Println("Customers list is empty")
 		return customers, nil
 	}

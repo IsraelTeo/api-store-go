@@ -5,10 +5,8 @@ import (
 	"net/http"
 
 	"github.com/IsraelTeo/api-store-go/model"
-	"github.com/IsraelTeo/api-store-go/payload"
 	"github.com/IsraelTeo/api-store-go/service"
 	"github.com/IsraelTeo/api-store-go/util"
-	"github.com/IsraelTeo/api-store-go/validate"
 	"github.com/labstack/echo/v4"
 )
 
@@ -21,54 +19,31 @@ func NewCustomerHandler(customerService service.CustomerService) *CustomerHandle
 }
 
 func (h *CustomerHandler) GetCustomerByID(c echo.Context) error {
-	ID, err := validate.ValidateAndParseID(c)
+	ID, err := util.ParseID(c)
 	if err != nil {
-		response := payload.NewResponse(payload.MessageTypeError, "Invalid ID format.", nil)
-		return c.JSON(http.StatusBadRequest, response)
+		return util.WriteError(c, http.StatusBadRequest, "Invalid ID", nil)
 	}
 
 	customer, err := h.customerService.GetByID(uint(ID))
 	if err != nil {
-		response := payload.NewResponse(payload.MessageTypeError, "Customer not found", nil)
-		return c.JSON(http.StatusNotFound, response)
+		return util.WriteError(c, http.StatusNotFound, "Customer not found", nil)
 	}
 
-	response := payload.NewResponse(payload.MessageTypeSuccess, "Customer found", customer)
-	return c.JSON(http.StatusOK, response)
+	return util.WriteResponse(c, http.StatusOK, "Customer found", customer)
 }
 
 func (h *CustomerHandler) GetAllCustomers(c echo.Context) error {
 	customers, err := h.customerService.GetAll()
 	if err != nil {
-		response := payload.NewResponse(payload.MessageTypeError, "Failed to fetch customers", nil)
-		return c.JSON(http.StatusInternalServerError, response)
+		return util.WriteError(c, http.StatusInternalServerError, "Failed to fetch customers", err)
 	}
 
-	response := payload.NewResponse(payload.MessageTypeSuccess, "Customers found", customers)
-	return c.JSON(http.StatusOK, response)
+	return util.WriteResponse(c, http.StatusOK, "Customers found", customers)
 }
 
 func (h *CustomerHandler) CreateCustomer(c echo.Context) error {
 	customer := model.Customer{}
 	if err := c.Bind(&customer); err != nil {
-		log.Printf("Error decoding request body: %v", err)
-		response := payload.NewResponse(payload.MessageTypeError, "Bad request", nil)
-		return c.JSON(http.StatusBadRequest, response)
-	}
-
-	if err := h.customerService.Create(&customer); err != nil {
-		response := payload.NewResponse(payload.MessageTypeError, "Failed to save customer", nil)
-		return c.JSON(http.StatusInternalServerError, response)
-	}
-
-	response := payload.NewResponse(payload.MessageTypeSuccess, "Customer created successfully", nil)
-	return c.JSON(http.StatusCreated, response)
-}
-
-func (h *CustomerHandler) CreateCustomer(c echo.Context) error {
-	customer := model.Customer{}
-	if err := c.Bind(&customer); err != nil {
-		log.Printf("Error decoding request body: %v", err)
 		return util.WriteError(c, http.StatusBadRequest, "Bad request", err)
 	}
 
@@ -76,46 +51,38 @@ func (h *CustomerHandler) CreateCustomer(c echo.Context) error {
 		return util.WriteError(c, http.StatusInternalServerError, "Failed to save customer", err)
 	}
 
-	return util.WriteResponse(c,http.StatusCreated, "Customer created successfully", nil )
+	return util.WriteResponse(c, http.StatusCreated, "Customer created successfully", nil)
 }
 
 func (h *CustomerHandler) UpdateCustomer(c echo.Context) error {
-	ID, err := validate.ValidateAndParseID(c)
+	ID, err := util.ParseID(c)
 	if err != nil {
-		response := payload.NewResponse(payload.MessageTypeError, "Invalid ID format", nil)
-		return c.JSON(http.StatusBadRequest, response)
+		return util.WriteError(c, http.StatusBadRequest, "Invalid ID format", err)
 	}
 
 	customer := model.Customer{}
 	if err := c.Bind(&customer); err != nil {
-		log.Printf("Error decoding request body: %v", err)
-		response := payload.NewResponse(payload.MessageTypeError, "Bad request", nil)
-		return c.JSON(http.StatusBadRequest, response)
+		return util.WriteError(c, http.StatusBadRequest, "Bad request", err)
 	}
 
 	updatedCustomer, err := h.customerService.Update(uint(ID), &customer)
 	if err != nil {
 		log.Printf("Error updating customer: %v", err)
-		response := payload.NewResponse(payload.MessageTypeError, "Failed to update customer", nil)
-		return c.JSON(http.StatusInternalServerError, response)
+		return util.WriteError(c, http.StatusInternalServerError, "Failed to update customer", err)
 	}
 
-	response := payload.NewResponse(payload.MessageTypeSuccess, "Customer updated successfully", updatedCustomer)
-	return c.JSON(http.StatusOK, response)
+	return util.WriteResponse(c, http.StatusOK, "Customer updated successfully", updatedCustomer)
 }
 
 func (h *CustomerHandler) DeleteCustomer(c echo.Context) error {
-	ID, err := validate.ValidateAndParseID(c)
+	ID, err := util.ParseID(c)
 	if err != nil {
-		response := payload.NewResponse(payload.MessageTypeError, "Invalid ID format", nil)
-		return c.JSON(http.StatusBadRequest, response)
+		return util.WriteError(c, http.StatusBadRequest, "Invalid ID format", err)
 	}
 
 	if err := h.customerService.Delete(uint(ID)); err != nil {
-		response := payload.NewResponse(payload.MessageTypeError, "Failed to delete customer", nil)
-		return c.JSON(http.StatusInternalServerError, response)
+		return util.WriteError(c, http.StatusInternalServerError, "Failed to delete customer", err)
 	}
 
-	response := payload.NewResponse(payload.MessageTypeSuccess, "Customer deleted successfully", nil)
-	return c.JSON(http.StatusOK, response)
+	return util.WriteResponse(c, http.StatusOK, "Customer deleted successfully", nil)
 }

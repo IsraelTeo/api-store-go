@@ -4,9 +4,8 @@ import (
 	"net/http"
 
 	"github.com/IsraelTeo/api-store-go/model"
-	"github.com/IsraelTeo/api-store-go/payload"
 	"github.com/IsraelTeo/api-store-go/service"
-	"github.com/IsraelTeo/api-store-go/validate"
+	"github.com/IsraelTeo/api-store-go/util"
 	"github.com/labstack/echo/v4"
 )
 
@@ -19,84 +18,69 @@ func NewProductHandler(productService service.ProductService) *ProductHandler {
 }
 
 func (h *ProductHandler) GetProductByID(c echo.Context) error {
-	ID, err := validate.ValidateAndParseID(c)
+	ID, err := util.ParseID(c)
 	if err != nil {
-		response := payload.NewResponse(payload.MessageTypeError, "Invalid ID format.", nil)
-		return c.JSON(http.StatusBadRequest, response)
+		return util.WriteError(c, http.StatusBadRequest, "Invalid ID", nil)
 	}
 
 	product, err := h.productService.GetByID(uint(ID))
 	if err != nil {
-		response := payload.NewResponse(payload.MessageTypeError, "Product not found", nil)
-		return c.JSON(http.StatusNotFound, response)
+		return util.WriteError(c, http.StatusNotFound, "Product not found", nil)
 	}
 
-	response := payload.NewResponse(payload.MessageTypeSuccess, "Product found", product)
-	return c.JSON(http.StatusOK, response)
+	return util.WriteResponse(c, http.StatusOK, "Product found", product)
 }
 
 func (h *ProductHandler) GetAllProducts(c echo.Context) error {
 	products, err := h.productService.GetAll()
 	if err != nil {
-		response := payload.NewResponse(payload.MessageTypeError, "Failed to fetch products", nil)
-		return c.JSON(http.StatusInternalServerError, response)
+		return util.WriteError(c, http.StatusInternalServerError, "Failed to fetch products", err)
 	}
 
-	response := payload.NewResponse(payload.MessageTypeSuccess, "Products found", products)
-	return c.JSON(http.StatusOK, response)
+	return util.WriteResponse(c, http.StatusOK, "Products found", products)
 }
 
 func (h *ProductHandler) CreateProduct(c echo.Context) error {
 	product := model.Product{}
 	if err := c.Bind(&product); err != nil {
-		response := payload.NewResponse(payload.MessageTypeError, "Bad request", nil)
-		return c.JSON(http.StatusBadRequest, response)
+		return util.WriteError(c, http.StatusBadRequest, "Bad request", err)
 	}
 
 	if err := h.productService.Create(&product); err != nil {
-		response := payload.NewResponse(payload.MessageTypeError, "Failed to save product", nil)
-		return c.JSON(http.StatusInternalServerError, response)
+		return util.WriteError(c, http.StatusInternalServerError, "Failed to save product", err)
 	}
 
-	response := payload.NewResponse(payload.MessageTypeSuccess, "Product created successfully", nil)
-	return c.JSON(http.StatusCreated, response)
+	return util.WriteResponse(c, http.StatusCreated, "Product created successfully", nil)
 }
 
 func (h *ProductHandler) UpdateProduct(c echo.Context) error {
-	ID, err := validate.ValidateAndParseID(c)
+	ID, err := util.ParseID(c)
 	if err != nil {
-		response := payload.NewResponse(payload.MessageTypeError, "Invalid ID format", nil)
-		return c.JSON(http.StatusBadRequest, response)
+		return util.WriteError(c, http.StatusBadRequest, "Invalid ID format", err)
 	}
 
 	product := model.Product{}
 	if err := c.Bind(&product); err != nil {
-		response := payload.NewResponse(payload.MessageTypeError, "Bad request", nil)
-		return c.JSON(http.StatusBadRequest, response)
+		return util.WriteError(c, http.StatusBadRequest, "Bad request", err)
 	}
 
 	updatedProduct, err := h.productService.Update(uint(ID), &product)
 	if err != nil {
-		response := payload.NewResponse(payload.MessageTypeError, "Failed to update product", nil)
-		return c.JSON(http.StatusInternalServerError, response)
+		return util.WriteError(c, http.StatusInternalServerError, "Failed to update product", err)
 	}
 
-	response := payload.NewResponse(payload.MessageTypeSuccess, "Product updated successfully", updatedProduct)
-	return c.JSON(http.StatusOK, response)
+	return util.WriteResponse(c, http.StatusOK, "Product updated successfully", updatedProduct)
 }
 
 func (h *ProductHandler) DeleteProduct(c echo.Context) error {
-	ID, err := validate.ValidateAndParseID(c)
+	ID, err := util.ParseID(c)
 	if err != nil {
-		response := payload.NewResponse(payload.MessageTypeError, "Invalid ID format", nil)
-		return c.JSON(http.StatusBadRequest, response)
+		return util.WriteError(c, http.StatusBadRequest, "Invalid ID format", err)
 	}
 
 	if err := h.productService.Delete(uint(ID)); err != nil {
-		response := payload.NewResponse(payload.MessageTypeError, "Failed to delete product", nil)
-		return c.JSON(http.StatusInternalServerError, response)
+		return util.WriteError(c, http.StatusInternalServerError, "Failed to delete product", err)
 	}
 
-	response := payload.NewResponse(payload.MessageTypeSuccess, "Product deleted successfully", nil)
-	return c.JSON(http.StatusOK, response)
+	return util.WriteResponse(c, http.StatusOK, "Product deleted successfully", nil)
 }

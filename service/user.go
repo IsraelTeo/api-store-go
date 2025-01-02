@@ -9,11 +9,10 @@ import (
 	"github.com/IsraelTeo/api-store-go/model"
 	"github.com/IsraelTeo/api-store-go/repository"
 	"github.com/IsraelTeo/api-store-go/util"
-	"github.com/IsraelTeo/api-store-go/validate"
 )
 
 type UserService interface {
-	GetBydID(ID uint) (*model.User, error)
+	GetByID(ID uint) (*model.User, error)
 	GetByEmail(email string) (*model.User, error)
 	GetAll() ([]model.User, error)
 	RegisterUser(user *model.RegisterUserPayload) error
@@ -29,7 +28,7 @@ func NewUserService(repo repository.UserRepository) UserService {
 	return &userService{repo: repo}
 }
 
-func (s *userService) GetBydID(ID uint) (*model.User, error) {
+func (s *userService) GetByID(ID uint) (*model.User, error) {
 	user, err := s.repo.GetByID(ID)
 	if err != nil {
 		log.Printf("Error fetching user with ID %d: %v", ID, err)
@@ -46,7 +45,7 @@ func (s *userService) GetAll() ([]model.User, error) {
 		return nil, fmt.Errorf("service: failed to fetch users: %w", err)
 	}
 
-	if validate.VerifyListEmpty(users) {
+	if util.VerifyListEmpty(users) {
 		log.Println("Customers list is empty")
 		return []model.User{}, nil
 	}

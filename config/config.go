@@ -1,7 +1,6 @@
 package config
 
 import (
-	"fmt"
 	"log"
 	"os"
 	"strconv"
@@ -15,7 +14,8 @@ type Config struct {
 	Port                  string //Almacena el puerto en el que se ejecutará la aplicación
 	DBUser                string //Almacena el nombre de usuario de la base de datos
 	DBPassword            string //Almacena la contraseña de la base de datos.
-	DBAddress             string //Almacena la dirección del servidor de la base de datos, incluye el puerto de bd
+	DBHost                string //Almacena la dirección del servidor de la base de datos
+	DBPort                string //Almecena el puerto de db
 	DBName                string //Almacena el nombre de la base de datos.
 	JWTExpirationInSecond int64  //Almacena la duración de expiración del token JWT en segundos.
 	JWTSecret             string //Almacena la clave secreta para los tokens JWT.
@@ -35,7 +35,8 @@ func InitConfig() *Config {
 		Port:                  os.Getenv("PORT"),
 		DBUser:                os.Getenv("DB_USER"),
 		DBPassword:            os.Getenv("DB_PASSWORD"),
-		DBAddress:             fmt.Sprintf("%s:%s", os.Getenv("DB_HOST"), os.Getenv("DB_PORT")),
+		DBHost:                os.Getenv("DB_HOST"),
+		DBPort:                os.Getenv("DB_PORT"),
 		DBName:                os.Getenv("DB_NAME"),
 		JWTExpirationInSecond: jwtExp,
 		JWTSecret:             os.Getenv("API_SECRET"),

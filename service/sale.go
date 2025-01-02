@@ -6,7 +6,7 @@ import (
 
 	"github.com/IsraelTeo/api-store-go/model"
 	"github.com/IsraelTeo/api-store-go/repository"
-	"github.com/IsraelTeo/api-store-go/validate"
+	"github.com/IsraelTeo/api-store-go/util"
 )
 
 type SaleService interface {
@@ -42,7 +42,7 @@ func (s *saleService) GetAll() ([]model.Sale, error) {
 		return nil, fmt.Errorf("service: failed to fetch sales: %w", err)
 	}
 
-	if validate.VerifyListEmpty(sales) {
+	if util.VerifyListEmpty(sales) {
 		log.Println("Sales list is empty")
 		return sales, nil
 	}
@@ -95,7 +95,7 @@ func (s *saleService) Delete(ID uint) error {
 }
 
 func calculateAmount(products []model.Product) float64 {
-	if validate.VerifyListEmpty(products) {
+	if util.VerifyListEmpty(products) {
 		log.Println("The product list is empty, there is no total amount.")
 		return 0
 	}
