@@ -53,7 +53,7 @@ func main() {
 
 	//Inicia servidor en el puerto: 8080
 	if err := config.StartServer(e, ":8080"); err != nil {
-		log.Fatalf("%v", err)
+		log.Fatalf("err: %v", err)
 	}
 
 }
